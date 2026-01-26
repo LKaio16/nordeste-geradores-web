@@ -40,6 +40,11 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // Garantir que os headers do ngrok estão sempre presentes
+    if (config.headers) {
+      config.headers['ngrok-skip-browser-warning'] = 'true'
+      config.headers['Accept'] = 'application/json'
+    }
     return config
   },
   (error) => {
