@@ -42,9 +42,24 @@ class AuthService {
         usuario: formatUsuarioFromResponse(data.usuario),
       }
     } catch (error: any) {
+      // Log de debug
+      console.error('❌ Erro no login:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+      })
+
       // Tratar erros específicos da API
+      if (error.response?.status === 400) {
+        const message = error.response?.data?.message || 'Credenciais inválidas'
+        throw new Error(message)
+      }
       if (error.response?.status === 401) {
         throw new Error('Email ou senha incorretos')
+      }
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        throw new Error(`Não foi possível conectar ao servidor. Verifique se a URL da API está correta: ${error.config?.baseURL || 'não configurada'}`)
       }
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message)

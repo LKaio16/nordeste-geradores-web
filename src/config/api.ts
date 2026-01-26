@@ -15,6 +15,12 @@ export const API_CONFIG = {
   },
 }
 
+// Log da URL da API em desenvolvimento (para debug)
+if (import.meta.env.DEV) {
+  console.log('🔧 API Base URL:', API_CONFIG.baseURL)
+  console.log('🔧 VITE_API_URL:', import.meta.env.VITE_API_URL || 'não configurada (usando fallback)')
+}
+
 // Instância do axios configurada
 export const api: AxiosInstance = axios.create({
   baseURL: API_CONFIG.baseURL,
