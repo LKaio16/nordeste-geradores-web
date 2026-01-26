@@ -25,7 +25,12 @@ if (import.meta.env.DEV) {
 export const api: AxiosInstance = axios.create({
   baseURL: API_CONFIG.baseURL,
   timeout: API_CONFIG.timeout,
-  headers: API_CONFIG.headers,
+  headers: {
+    ...API_CONFIG.headers,
+    // Headers para bypassar a página de verificação do ngrok
+    'ngrok-skip-browser-warning': 'true',
+    'Accept': 'application/json',
+  },
 })
 
 // Interceptor para adicionar token JWT nas requisições
@@ -50,8 +55,18 @@ api.interceptors.response.use(
     if (contentType.includes('text/html') && typeof response.data === 'string') {
       // Se for HTML, provavelmente é a página de verificação do ngrok
       if (response.data.includes('ngrok') || response.data.includes('<!DOCTYPE') || response.data.includes('<html')) {
-        console.error('Resposta HTML recebida (página do ngrok). Verifique a URL da API:', API_CONFIG.baseURL)
-        const error = new Error('Resposta HTML inesperada. O servidor retornou HTML ao invés de JSON. Verifique se a URL da API está correta e se o ngrok está configurado corretamente.')
+        console.error('⚠️ Resposta HTML recebida (página do ngrok). Tentando novamente com headers corretos...')
+        console.error('URL da API:', API_CONFIG.baseURL)
+        
+        // Tentar fazer a requisição novamente com headers de bypass
+        const originalRequest = response.config
+        if (originalRequest.headers) {
+          originalRequest.headers['ngrok-skip-browser-warning'] = 'true'
+          originalRequest.headers['Accept'] = 'application/json'
+        }
+        
+        // Rejeitar para que o erro seja tratado adequadamente
+        const error = new Error('O servidor retornou HTML ao invés de JSON. Isso geralmente acontece com ngrok free. Verifique se o header "ngrok-skip-browser-warning" está sendo enviado.')
         return Promise.reject(error)
       }
     }
@@ -62,9 +77,26 @@ api.interceptors.response.use(
 
     // Verificar se o erro é uma resposta HTML (ngrok)
     if (error.response?.data && typeof error.response.data === 'string') {
-      if (error.response.data.includes('ngrok') || error.response.data.includes('<!DOCTYPE')) {
-        console.error('Erro: Resposta HTML recebida do servidor. Verifique a URL da API:', API_CONFIG.baseURL)
-        return Promise.reject(new Error('Servidor retornou HTML ao invés de JSON. Verifique a URL da API.'))
+      if (error.response.data.includes('ngrok') || error.response.data.includes('<!DOCTYPE') || error.response.data.includes('<html')) {
+        console.error('⚠️ Erro: Resposta HTML recebida do servidor (ngrok).')
+        console.error('URL:', API_CONFIG.baseURL)
+        console.error('Tentando novamente com headers de bypass...')
+        
+        // Tentar fazer a requisição novamente com headers corretos
+        const originalRequest = error.config
+        if (originalRequest && originalRequest.headers) {
+          originalRequest.headers['ngrok-skip-browser-warning'] = 'true'
+          originalRequest.headers['Accept'] = 'application/json'
+          
+          // Retry da requisição
+          try {
+            return await api(originalRequest)
+          } catch (retryError: any) {
+            return Promise.reject(new Error('Não foi possível acessar a API. O ngrok pode estar exibindo a página de verificação. Verifique se a URL está correta e se o túnel está ativo.'))
+          }
+        }
+        
+        return Promise.reject(new Error('Servidor retornou HTML ao invés de JSON. Verifique a URL da API e se o ngrok está configurado corretamente.'))
       }
     }
 
