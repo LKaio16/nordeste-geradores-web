@@ -389,6 +389,17 @@ export interface ContaRequest {
   subcategoria?: string
 }
 
+export interface UsuarioRequest {
+  nome: string
+  email: string
+  telefone: string
+  cargo: string
+  nivelAcesso: NivelAcesso
+  status: StatusUsuario
+  dataAdmissao: string
+  senha?: string // Opcional para atualização
+}
+
 export interface MesRelatorio {
   mes: string
   mesAno: string

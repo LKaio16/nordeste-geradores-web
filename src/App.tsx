@@ -21,6 +21,8 @@ import { EstoquePage } from './features/estoque/pages/EstoquePage'
 import { ProdutosPage } from './features/produtos/pages/ProdutosPage'
 import { PropostasPage } from './features/propostas/pages/PropostasPage'
 import { UsuariosPage } from './features/usuarios/pages/UsuariosPage'
+import { UsuarioFormPage } from './features/usuarios/pages/UsuarioFormPage'
+import { UsuarioDetalhesPage } from './features/usuarios/pages/UsuarioDetalhesPage'
 import { ConfiguracoesPage } from './features/configuracoes/pages/ConfiguracoesPage'
 import { NotasFiscaisPage } from './features/notas-fiscais/pages/NotasFiscaisPage'
 import { NotaFiscalDetalhesPage } from './features/notas-fiscais/pages/NotaFiscalDetalhesPage'
@@ -71,6 +73,9 @@ function App() {
             <Route path="produtos/:id/editar" element={<ProdutoFormPage />} />
             <Route path="propostas" element={<PropostasPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
+            <Route path="usuarios/novo" element={<UsuarioFormPage />} />
+            <Route path="usuarios/:id" element={<UsuarioDetalhesPage />} />
+            <Route path="usuarios/:id/editar" element={<UsuarioFormPage />} />
             <Route path="configuracoes" element={<ConfiguracoesPage />} />
             <Route path="notas-entrada" element={<NotasFiscaisPage />} />
             <Route path="notas-entrada/nova" element={<NotaFiscalFormPage />} />
