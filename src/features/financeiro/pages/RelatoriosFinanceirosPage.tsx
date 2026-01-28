@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { relatorioFinanceiroService } from '@/services/relatorioFinanceiroService'
+import { relatorioNotaFiscalService, RelatorioNotaFiscal } from '@/services/relatorioNotaFiscalService'
 import { RelatorioFinanceiro, MesRelatorio } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FileText, Calendar, Download, TrendingUp, TrendingDown, DollarSign, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Eye, Clock } from 'lucide-react'
+import { FileText, Calendar, Download, TrendingUp, TrendingDown, DollarSign, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Eye, Clock, Receipt, FileCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+type TipoRelatorio = 'contas' | 'notas-fiscais'
+
 export function RelatoriosFinanceirosPage() {
+  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>('contas')
   const [relatorio, setRelatorio] = useState<RelatorioFinanceiro | null>(null)
+  const [relatorioNotas, setRelatorioNotas] = useState<RelatorioNotaFiscal | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dataInicio, setDataInicio] = useState(() => {
@@ -77,14 +82,26 @@ export function RelatoriosFinanceirosPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await relatorioFinanceiroService.gerarRelatorio(dataInicio, dataFim)
-      setRelatorio(data)
+      
+      if (tipoRelatorio === 'contas') {
+        const data = await relatorioFinanceiroService.gerarRelatorio(dataInicio, dataFim)
+        setRelatorio(data)
+        setRelatorioNotas(null)
+      } else {
+        const data = await relatorioNotaFiscalService.gerarRelatorio(dataInicio, dataFim)
+        setRelatorioNotas(data)
+        setRelatorio(null)
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar relatório')
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    carregarRelatorio()
+  }, [tipoRelatorio, dataInicio, dataFim])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -169,12 +186,35 @@ export function RelatoriosFinanceirosPage() {
           <h1 className="text-3xl font-bold text-slate-900">Relatório Financeiro</h1>
           <p className="text-slate-600 mt-1">Fluxo de Caixa e Análise Financeira</p>
         </div>
-        {relatorio && (
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Botão de alternância entre tipos de relatório */}
+          <div className="flex items-center gap-2 border border-slate-200 rounded-md p-1">
+            <Button
+              variant={tipoRelatorio === 'contas' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTipoRelatorio('contas')}
+              className="gap-2"
+            >
+              <FileCheck className="h-4 w-4" />
+              Contas
+            </Button>
+            <Button
+              variant={tipoRelatorio === 'notas-fiscais' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTipoRelatorio('notas-fiscais')}
+              className="gap-2"
+            >
+              <Receipt className="h-4 w-4" />
+              Notas Fiscais
+            </Button>
+          </div>
+          {(relatorio || relatorioNotas) && (
+            <Button variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}
@@ -300,7 +340,159 @@ export function RelatoriosFinanceirosPage() {
         </Card>
       )}
 
-      {relatorio && (
+      {/* Relatório de Notas Fiscais */}
+      {tipoRelatorio === 'notas-fiscais' && relatorioNotas && (
+        <div className="space-y-6">
+          {/* Resumo */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Total Entradas</p>
+                    <p className="text-2xl font-bold text-green-600 mt-1">
+                      {formatCurrency(relatorioNotas.totais.totalEntradas)}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {relatorioNotas.totais.totalQuantidadeEntradas} nota(s)
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Total Saídas</p>
+                    <p className="text-2xl font-bold text-red-600 mt-1">
+                      {formatCurrency(relatorioNotas.totais.totalSaidas)}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {relatorioNotas.totais.totalQuantidadeSaidas} nota(s)
+                    </p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Saldo Final</p>
+                    <p className={`text-2xl font-bold mt-1 ${
+                      relatorioNotas.totais.saldoFinal >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(relatorioNotas.totais.saldoFinal)}
+                    </p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-slate-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Total de Notas</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">
+                      {relatorioNotas.totais.totalQuantidadeEntradas + relatorioNotas.totais.totalQuantidadeSaidas}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {relatorioNotas.totais.totalQuantidadeEntradas} entrada(s) / {relatorioNotas.totais.totalQuantidadeSaidas} saída(s)
+                    </p>
+                  </div>
+                  <Receipt className="h-8 w-8 text-slate-400" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabela Mensal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Relatório Mensal de Notas Fiscais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="px-3 py-2 text-left text-sm font-semibold text-slate-700">Mês</th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-slate-700">Saldo Início</th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-green-700">Entradas</th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-red-700">Saídas</th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-slate-700">Saldo Final</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-slate-700">Qtd. Entradas</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-slate-700">Qtd. Saídas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {relatorioNotas.meses.map((mes, index) => (
+                      <tr key={index} className="hover:bg-slate-50">
+                        <td className="px-3 py-2 font-medium text-slate-900">{mes.mes}</td>
+                        <td className="px-3 py-2 text-right text-sm text-slate-600">
+                          {formatCurrency(mes.saldoInicio)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-sm text-green-600 font-semibold">
+                          {formatCurrency(mes.totalEntradas)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-sm text-red-600 font-semibold">
+                          {formatCurrency(mes.totalSaidas)}
+                        </td>
+                        <td className={`px-3 py-2 text-right text-sm font-semibold ${
+                          mes.saldoFimPeriodo >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {formatCurrency(mes.saldoFimPeriodo)}
+                        </td>
+                        <td className="px-3 py-2 text-center text-sm text-slate-600">
+                          {mes.quantidadeEntradas}
+                        </td>
+                        <td className="px-3 py-2 text-center text-sm text-slate-600">
+                          {mes.quantidadeSaidas}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Total */}
+                    <tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
+                      <td className="px-3 py-2 font-bold text-slate-900">TOTAL</td>
+                      <td className="px-3 py-2 text-right text-sm text-slate-600">-</td>
+                      <td className="px-3 py-2 text-right text-sm text-green-600">
+                        {formatCurrency(relatorioNotas.totais.totalEntradas)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-sm text-red-600">
+                        {formatCurrency(relatorioNotas.totais.totalSaidas)}
+                      </td>
+                      <td className={`px-3 py-2 text-right text-sm ${
+                        relatorioNotas.totais.saldoFinal >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatCurrency(relatorioNotas.totais.saldoFinal)}
+                      </td>
+                      <td className="px-3 py-2 text-center text-sm text-slate-600">
+                        {relatorioNotas.totais.totalQuantidadeEntradas}
+                      </td>
+                      <td className="px-3 py-2 text-center text-sm text-slate-600">
+                        {relatorioNotas.totais.totalQuantidadeSaidas}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Relatório de Contas */}
+      {tipoRelatorio === 'contas' && relatorio && (
         <div className="space-y-6">
           {/* Cards de Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

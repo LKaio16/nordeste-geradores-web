@@ -70,3 +70,4 @@ class UsuarioService {
 
 export const usuarioService = new UsuarioService()
 
+

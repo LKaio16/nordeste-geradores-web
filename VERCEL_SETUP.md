@@ -86,3 +86,4 @@ Environments: ☑ Production ☑ Preview ☑ Development
 
 Após configurar a variável de ambiente, **sempre faça um novo deploy** para que as mudanças tenham efeito!
 
+
