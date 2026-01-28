@@ -82,6 +82,13 @@ export function NotaFiscalFormPage() {
     itens: [{ ...emptyItem }],
   })
 
+  const gerarNumeroNotaSaida = (dataEmissaoIso: string) => {
+    const datePart = (dataEmissaoIso || new Date().toISOString().split('T')[0]).replaceAll('-', '')
+    // Ex: SAI-20260128-1735839123456
+    const numero = `SAI-${datePart}-${Date.now()}`
+    return numero.length > 50 ? numero.slice(0, 50) : numero
+  }
+
   useEffect(() => {
     carregarFornecedores()
     carregarProdutos()
@@ -384,7 +391,19 @@ export function NotaFiscalFormPage() {
                 <select
                   id="tipo"
                   value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value as TipoNotaFiscal })}
+                  onChange={(e) => {
+                    const novoTipo = e.target.value as TipoNotaFiscal
+                    setFormData((prev) => {
+                      // Se for SAÍDA e o número estiver vazio, gerar automaticamente
+                      const precisaGerarNumero =
+                        novoTipo === TipoNotaFiscal.SAIDA && (!prev.numeroNota || !prev.numeroNota.trim())
+                      return {
+                        ...prev,
+                        tipo: novoTipo,
+                        numeroNota: precisaGerarNumero ? gerarNumeroNotaSaida(prev.dataEmissao) : prev.numeroNota,
+                      }
+                    })
+                  }}
                   className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
                   required
                 >

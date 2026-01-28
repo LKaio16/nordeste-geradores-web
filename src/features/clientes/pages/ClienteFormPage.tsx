@@ -112,15 +112,18 @@ export function ClienteFormPage() {
       return
     }
 
-    const normalizedEmail = normalizeEmail(formData.email)
-    if (!normalizedEmail) {
-      setEmailError('Email é obrigatório')
-      return
-    }
-
-    if (!isValidEmail(normalizedEmail)) {
-      setEmailError('Email inválido')
-      return
+    // Email opcional: validar apenas se foi preenchido
+    const rawEmail = formData.email?.trim() || ''
+    const normalizedEmail = rawEmail ? normalizeEmail(rawEmail) : ''
+    if (rawEmail) {
+      if (!normalizedEmail) {
+        setEmailError('Email inválido')
+        return
+      }
+      if (!isValidEmail(normalizedEmail)) {
+        setEmailError('Email inválido')
+        return
+      }
     }
 
     try {
@@ -128,7 +131,7 @@ export function ClienteFormPage() {
       const dataToSubmit: ClienteRequest = {
         ...formData,
         cnpj: unmaskedCpfCnpj,
-        email: normalizedEmail,
+        email: normalizedEmail || '',
         telefone: unmaskPhone(formData.telefone),
       }
 
@@ -263,7 +266,7 @@ export function ClienteFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -281,7 +284,6 @@ export function ClienteFormPage() {
                         setEmailError('Email inválido')
                       }
                     }}
-                    required
                     placeholder="email@exemplo.com"
                     className={`pl-10 ${emailError ? 'border-red-500' : ''}`}
                   />
@@ -292,7 +294,7 @@ export function ClienteFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone *</Label>
+                <Label htmlFor="telefone">Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -302,7 +304,6 @@ export function ClienteFormPage() {
                       const masked = maskPhone(e.target.value)
                       setFormData({ ...formData, telefone: masked })
                     }}
-                    required
                     placeholder="(00) 00000-0000"
                     className="pl-10"
                     maxLength={15}
