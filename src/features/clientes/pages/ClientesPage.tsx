@@ -24,6 +24,8 @@ import {
   Building2,
   CheckCircle2,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { maskCPFCNPJ } from '@/utils/validators'
@@ -41,6 +43,8 @@ export function ClientesPage() {
     status?: StatusCliente
     estado?: string
   }>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   useEffect(() => {
     carregarClientes()
@@ -85,6 +89,17 @@ export function ClientesPage() {
 
     return matchesSearch && matchesStatus && matchesEstado
   })
+
+  // Paginação
+  const totalPages = Math.ceil(filteredClientes.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedClientes = filteredClientes.slice(startIndex, endIndex)
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters, searchTerm])
 
   const clearFilters = () => {
     setFilters({})
@@ -261,23 +276,48 @@ export function ClientesPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Nome</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">CNPJ</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Telefone</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Cidade/UF</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredClientes.map((cliente) => (
+        <>
+          {/* Informações de Resultado */}
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <div>
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClientes.length)} de {filteredClientes.length} clientes
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="itemsPerPage" className="text-sm">Itens por página:</Label>
+              <select
+                id="itemsPerPage"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Nome</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">CNPJ</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Telefone</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Cidade/UF</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedClientes.map((cliente) => (
                     <motion.tr
                       key={cliente.id}
                       initial={{ opacity: 0 }}
@@ -362,9 +402,95 @@ export function ClientesPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                  </Button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-2"
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClientes.map((cliente) => (
+        <>
+          {/* Informações de Resultado */}
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <div>
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClientes.length)} de {filteredClientes.length} clientes
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="itemsPerPageCards" className="text-sm">Itens por página:</Label>
+              <select
+                id="itemsPerPageCards"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedClientes.map((cliente) => (
             <motion.div
               key={cliente.id}
               initial={{ opacity: 0, y: 20 }}
@@ -444,7 +570,68 @@ export function ClientesPage() {
               </Card>
             </motion.div>
           ))}
-        </div>
+          </div>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <Card>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="gap-2"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <div className="flex gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number
+                        if (totalPages <= 5) {
+                          pageNum = i + 1
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i
+                        } else {
+                          pageNum = currentPage - 2 + i
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-10"
+                          >
+                            {pageNum}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="gap-2"
+                    >
+                      Próxima
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   )
