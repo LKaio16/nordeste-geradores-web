@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utils/cn'
 import { useEffect } from 'react'
+import { NivelAcesso } from '@/types'
 
 interface NavItem {
   title: string
@@ -216,7 +217,15 @@ export function AppSidebar() {
                 </p>
               )}
               <nav className="space-y-1">
-                {adminItems.map((item) => {
+                {adminItems
+                  .filter((item) => {
+                    // Filtrar "Gestão de Funcionários" para usuários FINANCEIRO
+                    if (item.path === '/usuarios' && user?.nivelAcesso === NivelAcesso.FINANCEIRO) {
+                      return false
+                    }
+                    return true
+                  })
+                  .map((item) => {
                   const Icon = item.icon
                   const isActive = location.pathname === item.path
                   return (

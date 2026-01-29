@@ -163,6 +163,7 @@ export const API_ENDPOINTS = {
     refresh: '/api/auth/refresh',
     me: '/api/auth/me', // Endpoint para verificar token e obter dados do usuário
     logout: '/api/auth/logout',
+    changePassword: '/api/auth/change-password',
   },
   usuarios: {
     list: '/api/usuarios',

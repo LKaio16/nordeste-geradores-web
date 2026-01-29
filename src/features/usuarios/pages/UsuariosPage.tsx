@@ -77,6 +77,7 @@ export function UsuariosPage() {
     const labels: Record<NivelAcesso, string> = {
       [NivelAcesso.ADMIN]: 'Administrador',
       [NivelAcesso.GERENTE]: 'Gerente',
+      [NivelAcesso.FINANCEIRO]: 'Financeiro',
       [NivelAcesso.TECNICO]: 'Técnico',
       [NivelAcesso.OPERACIONAL]: 'Operacional',
     }

@@ -304,6 +304,7 @@ export function UsuarioFormPage() {
                   >
                     <option value={NivelAcesso.OPERACIONAL}>Operacional</option>
                     <option value={NivelAcesso.TECNICO}>Técnico</option>
+                    <option value={NivelAcesso.FINANCEIRO}>Financeiro</option>
                     <option value={NivelAcesso.GERENTE}>Gerente</option>
                     <option value={NivelAcesso.ADMIN}>Administrador</option>
                   </select>

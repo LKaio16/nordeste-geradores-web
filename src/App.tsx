@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { RoleProtectedRoute } from './components/auth/RoleProtectedRoute'
+import { NivelAcesso } from './types'
 import { Layout } from './components/layout/Layout'
 import { LoginPage } from './features/auth/pages/LoginPage'
 import { DashboardPage } from './features/dashboard/pages/DashboardPage'
@@ -72,10 +74,38 @@ function App() {
             <Route path="produtos/:id" element={<ProdutoDetalhesPage />} />
             <Route path="produtos/:id/editar" element={<ProdutoFormPage />} />
             <Route path="propostas" element={<PropostasPage />} />
-            <Route path="usuarios" element={<UsuariosPage />} />
-            <Route path="usuarios/novo" element={<UsuarioFormPage />} />
-            <Route path="usuarios/:id" element={<UsuarioDetalhesPage />} />
-            <Route path="usuarios/:id/editar" element={<UsuarioFormPage />} />
+            <Route
+              path="usuarios"
+              element={
+                <RoleProtectedRoute allowedRoles={[NivelAcesso.ADMIN, NivelAcesso.GERENTE]}>
+                  <UsuariosPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="usuarios/novo"
+              element={
+                <RoleProtectedRoute allowedRoles={[NivelAcesso.ADMIN, NivelAcesso.GERENTE]}>
+                  <UsuarioFormPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id"
+              element={
+                <RoleProtectedRoute allowedRoles={[NivelAcesso.ADMIN, NivelAcesso.GERENTE]}>
+                  <UsuarioDetalhesPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id/editar"
+              element={
+                <RoleProtectedRoute allowedRoles={[NivelAcesso.ADMIN, NivelAcesso.GERENTE]}>
+                  <UsuarioFormPage />
+                </RoleProtectedRoute>
+              }
+            />
             <Route path="configuracoes" element={<ConfiguracoesPage />} />
             <Route path="notas-entrada" element={<NotasFiscaisPage />} />
             <Route path="notas-entrada/nova" element={<NotaFiscalFormPage />} />

@@ -161,6 +161,18 @@ class AuthService {
       return { valid: false }
     }
   }
+
+  async changePassword(senhaAtual: string, novaSenha: string): Promise<void> {
+    try {
+      await api.post(API_ENDPOINTS.auth.changePassword, {
+        senhaAtual,
+        novaSenha,
+      })
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'Erro ao alterar senha'
+      throw new Error(message)
+    }
+  }
 }
 
 export const authService = new AuthService()

@@ -2,6 +2,7 @@
 export enum NivelAcesso {
   ADMIN = 'ADMIN',
   GERENTE = 'GERENTE',
+  FINANCEIRO = 'FINANCEIRO',
   TECNICO = 'TECNICO',
   OPERACIONAL = 'OPERACIONAL',
 }
