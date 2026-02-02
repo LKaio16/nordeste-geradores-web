@@ -70,6 +70,14 @@ export function ContaDetalhesPage() {
   }
 
   const formatDate = (date: string) => {
+    // Parse direto da data no formato YYYY-MM-DD sem conversão de timezone
+    if (!date) return ''
+    const parts = date.split('T')[0].split('-')
+    if (parts.length === 3) {
+      // Formato: YYYY-MM-DD -> DD/MM/YYYY
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    // Fallback para o método antigo se não estiver no formato esperado
     return new Date(date).toLocaleDateString('pt-BR')
   }
 
@@ -144,7 +152,15 @@ export function ContaDetalhesPage() {
 
   const isVencida =
     conta.status !== StatusConta.PAGO &&
-    new Date(conta.dataVencimento) < new Date() &&
+    (() => {
+      const vencimentoStr = conta.dataVencimento.split('T')[0]
+      const [ano, mes, dia] = vencimentoStr.split('-').map(Number)
+      const vencimento = new Date(ano, mes - 1, dia)
+      const hoje = new Date()
+      hoje.setHours(0, 0, 0, 0)
+      vencimento.setHours(0, 0, 0, 0)
+      return vencimento < hoje
+    })() &&
     !conta.dataPagamento
 
   return (
@@ -309,6 +325,17 @@ export function ContaDetalhesPage() {
                     </p>
                     <p className="font-semibold">{conta.cliente.nome}</p>
                     <p className="text-sm text-slate-600">{conta.cliente.email}</p>
+                  </div>
+                )}
+
+                {conta.fornecedor && (
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Fornecedor
+                    </p>
+                    <p className="font-semibold">{conta.fornecedor.nome}</p>
+                    <p className="text-sm text-slate-600">{conta.fornecedor.email}</p>
                   </div>
                 )}
 

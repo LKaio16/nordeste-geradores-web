@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Conta, ContaRequest, TipoConta, StatusConta, Cliente, FormaPagamento, CategoriaFinanceira } from '@/types'
+import { Conta, ContaRequest, TipoConta, StatusConta, Cliente, Fornecedor, FormaPagamento, CategoriaFinanceira } from '@/types'
 import { contaService } from '@/services/contaService'
 import { clienteService } from '@/services/clienteService'
+import { fornecedorService } from '@/services/fornecedorService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,10 +64,12 @@ export function ContaFormPage() {
   const [loadingConta, setLoadingConta] = useState(false)
   const [error, setError] = useState('')
   const [clientes, setClientes] = useState<Cliente[]>([])
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
 
   const [formData, setFormData] = useState<ContaRequest>({
     tipo: TipoConta.PAGAR,
     clienteId: undefined,
+    fornecedorId: undefined,
     descricao: '',
     valor: 0,
     dataVencimento: '',
@@ -81,6 +84,7 @@ export function ContaFormPage() {
 
   useEffect(() => {
     carregarClientes()
+    carregarFornecedores()
     if (id) {
       carregarConta(id)
     }
@@ -116,6 +120,15 @@ export function ContaFormPage() {
     }
   }
 
+  const carregarFornecedores = async () => {
+    try {
+      const data = await fornecedorService.listar()
+      setFornecedores(data.filter((f) => f.status === 'ATIVO'))
+    } catch (err: any) {
+      console.error('Erro ao carregar fornecedores:', err)
+    }
+  }
+
   const carregarConta = async (contaId: string) => {
     try {
       setLoadingConta(true)
@@ -123,6 +136,7 @@ export function ContaFormPage() {
       setFormData({
         tipo: conta.tipo,
         clienteId: conta.clienteId || undefined,
+        fornecedorId: conta.fornecedorId || undefined,
         descricao: conta.descricao,
         valor: conta.valor,
         dataVencimento: conta.dataVencimento,
@@ -174,10 +188,22 @@ export function ContaFormPage() {
 
     try {
       setLoading(true)
+      
+      // Garantir que a data está no formato correto (YYYY-MM-DD)
+      // Input type="date" já retorna no formato YYYY-MM-DD, mas vamos garantir
+      const dataVencimentoFormatada = formData.dataVencimento 
+        ? formData.dataVencimento.split('T')[0].split(' ')[0] 
+        : formData.dataVencimento
+      const dataPagamentoFormatada = formData.dataPagamento 
+        ? formData.dataPagamento.split('T')[0].split(' ')[0] 
+        : undefined
+      
       const dataToSubmit: ContaRequest = {
         ...formData,
+        dataVencimento: dataVencimentoFormatada,
         clienteId: formData.clienteId || undefined,
-        dataPagamento: formData.dataPagamento || undefined,
+        fornecedorId: formData.fornecedorId || undefined,
+        dataPagamento: dataPagamentoFormatada || undefined,
         formaPagamento: formData.formaPagamento || undefined,
         categoriaFinanceira: formData.categoriaFinanceira || CategoriaFinanceira.OPERACIONAL, // Garantir que sempre tenha valor
         subcategoria: formData.subcategoria, // Sempre enviar subcategoria
@@ -295,15 +321,49 @@ export function ContaFormPage() {
                   <select
                     id="clienteId"
                     value={formData.clienteId || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, clienteId: e.target.value || undefined })
-                    }
+                    onChange={(e) => {
+                      const clienteId = e.target.value || undefined
+                      setFormData({ 
+                        ...formData, 
+                        clienteId,
+                        // Limpar fornecedor se cliente for selecionado
+                        fornecedorId: clienteId ? undefined : formData.fornecedorId
+                      })
+                    }}
                     className="w-full h-10 px-10 rounded-md border border-slate-200 bg-white"
                   >
                     <option value="">Nenhum</option>
                     {clientes.map((cliente) => (
                       <option key={cliente.id} value={cliente.id}>
                         {cliente.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fornecedorId">Fornecedor (Opcional)</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <select
+                    id="fornecedorId"
+                    value={formData.fornecedorId || ''}
+                    onChange={(e) => {
+                      const fornecedorId = e.target.value || undefined
+                      setFormData({ 
+                        ...formData, 
+                        fornecedorId,
+                        // Limpar cliente se fornecedor for selecionado
+                        clienteId: fornecedorId ? undefined : formData.clienteId
+                      })
+                    }}
+                    className="w-full h-10 px-10 rounded-md border border-slate-200 bg-white"
+                  >
+                    <option value="">Nenhum</option>
+                    {fornecedores.map((fornecedor) => (
+                      <option key={fornecedor.id} value={fornecedor.id}>
+                        {fornecedor.nome}
                       </option>
                     ))}
                   </select>
@@ -338,7 +398,9 @@ export function ContaFormPage() {
                     id="dataVencimento"
                     type="date"
                     value={formData.dataVencimento}
-                    onChange={(e) => setFormData({ ...formData, dataVencimento: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, dataVencimento: e.target.value })
+                    }}
                     required
                     className="pl-10"
                   />

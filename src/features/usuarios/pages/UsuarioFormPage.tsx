@@ -132,7 +132,8 @@ export function UsuarioFormPage() {
 
     try {
       setLoading(true)
-      const dataToSubmit: UsuarioRequest = {
+      // Preparar dados base
+      const baseData: Omit<UsuarioRequest, 'senha'> = {
         nome: formData.nome.trim(),
         email: normalizedEmail,
         telefone: unmaskPhone(formData.telefone),
@@ -140,8 +141,18 @@ export function UsuarioFormPage() {
         nivelAcesso: formData.nivelAcesso,
         status: formData.status,
         dataAdmissao: formData.dataAdmissao,
-        ...(formData.senha && { senha: formData.senha }),
       }
+
+      // Só incluir senha se estiver preenchida e tiver pelo menos 6 caracteres
+      const dataToSubmit: UsuarioRequest = isEditing
+        ? {
+            ...baseData,
+            ...(formData.senha && formData.senha.trim().length >= 6 ? { senha: formData.senha.trim() } : {}),
+          }
+        : {
+            ...baseData,
+            senha: formData.senha.trim(), // Obrigatória na criação
+          }
 
       if (isEditing && id) {
         await usuarioService.atualizar(id, dataToSubmit)

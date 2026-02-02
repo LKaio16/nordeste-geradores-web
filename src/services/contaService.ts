@@ -24,6 +24,7 @@ function formatContaFromResponse(conta: any): Conta {
       id: String(conta.id),
       tipo: conta.tipo,
       clienteId: conta.clienteId || (conta.cliente ? String(conta.cliente.id) : undefined),
+      fornecedorId: conta.fornecedorId || (conta.fornecedor ? String(conta.fornecedor.id) : undefined),
       descricao: conta.descricao,
       valor: valor || 0,
       dataVencimento: formatDate(conta.dataVencimento) || '',
@@ -46,6 +47,20 @@ function formatContaFromResponse(conta: any): Conta {
       status: conta.cliente.status,
       createdAt: conta.cliente.createdAt || new Date().toISOString(),
       updatedAt: conta.cliente.updatedAt || new Date().toISOString(),
+    } : undefined,
+    fornecedor: conta.fornecedor ? {
+      id: String(conta.fornecedor.id),
+      nome: conta.fornecedor.nome,
+      cnpj: conta.fornecedor.cnpj,
+      email: conta.fornecedor.email,
+      telefone: conta.fornecedor.telefone || '',
+      endereco: conta.fornecedor.endereco || '',
+      cidade: conta.fornecedor.cidade || '',
+      estado: conta.fornecedor.estado || '',
+      status: conta.fornecedor.status,
+      observacoes: conta.fornecedor.observacoes || undefined,
+      createdAt: conta.fornecedor.createdAt || new Date().toISOString(),
+      updatedAt: conta.fornecedor.updatedAt || new Date().toISOString(),
     } : undefined,
     createdAt: conta.createdAt ? (typeof conta.createdAt === 'string' ? conta.createdAt : conta.createdAt.toString()) : new Date().toISOString(),
     updatedAt: conta.updatedAt ? (typeof conta.updatedAt === 'string' ? conta.updatedAt : conta.updatedAt.toString()) : new Date().toISOString(),
@@ -76,6 +91,7 @@ class ContaService {
       const response = await api.post<any>(API_ENDPOINTS.contas.create, data)
       return formatContaFromResponse(response.data)
     } catch (error: any) {
+      console.error('❌ [SERVICE] Erro ao criar conta:', error)
       const message = error.response?.data?.message || error.message || 'Erro ao criar conta'
       throw new Error(message)
     }

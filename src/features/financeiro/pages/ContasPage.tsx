@@ -86,6 +86,14 @@ export function ContasPage() {
   }
 
   const formatDate = (date: string) => {
+    // Parse direto da data no formato YYYY-MM-DD sem conversão de timezone
+    if (!date) return ''
+    const parts = date.split('T')[0].split('-')
+    if (parts.length === 3) {
+      // Formato: YYYY-MM-DD -> DD/MM/YYYY
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    // Fallback para o método antigo se não estiver no formato esperado
     return new Date(date).toLocaleDateString('pt-BR')
   }
 
@@ -96,7 +104,10 @@ export function ContasPage() {
     if (status === StatusConta.VENCIDO) return true
     
     // Verificar pela data de vencimento
-    const vencimento = new Date(dataVencimento)
+    // Parse direto da data no formato YYYY-MM-DD sem conversão de timezone
+    const vencimentoStr = dataVencimento.split('T')[0] // Remove hora se houver
+    const [ano, mes, dia] = vencimentoStr.split('-').map(Number)
+    const vencimento = new Date(ano, mes - 1, dia) // mes - 1 porque Date usa 0-11
     vencimento.setHours(0, 0, 0, 0)
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
@@ -170,14 +181,23 @@ export function ContasPage() {
       // Filtro por data de vencimento
       let matchesData = true
       if (filters.dataInicio || filters.dataFim) {
-        const dataVencimento = new Date(conta.dataVencimento)
+        // Parse direto da data sem conversão de timezone
+        const vencimentoStr = conta.dataVencimento.split('T')[0]
+        const [anoVenc, mesVenc, diaVenc] = vencimentoStr.split('-').map(Number)
+        const dataVencimento = new Date(anoVenc, mesVenc - 1, diaVenc)
+        dataVencimento.setHours(0, 0, 0, 0)
+        
         if (filters.dataInicio) {
-          const dataInicio = new Date(filters.dataInicio)
+          const inicioStr = filters.dataInicio.split('T')[0]
+          const [anoInicio, mesInicio, diaInicio] = inicioStr.split('-').map(Number)
+          const dataInicio = new Date(anoInicio, mesInicio - 1, diaInicio)
           dataInicio.setHours(0, 0, 0, 0)
           if (dataVencimento < dataInicio) matchesData = false
         }
         if (filters.dataFim) {
-          const dataFim = new Date(filters.dataFim)
+          const fimStr = filters.dataFim.split('T')[0]
+          const [anoFim, mesFim, diaFim] = fimStr.split('-').map(Number)
+          const dataFim = new Date(anoFim, mesFim - 1, diaFim)
           dataFim.setHours(23, 59, 59, 999)
           if (dataVencimento > dataFim) matchesData = false
         }
@@ -187,10 +207,16 @@ export function ContasPage() {
     })
     .sort((a, b) => {
       if (ordenacaoVencimento === null) return 0
+
+      // Parse direto das datas sem conversão de timezone
+      const parseDate = (dateStr: string): number => {
+        const dateParts = dateStr.split('T')[0].split('-').map(Number)
+        return new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).getTime()
+      }
       
-      const dataA = new Date(a.dataVencimento).getTime()
-      const dataB = new Date(b.dataVencimento).getTime()
-      
+      const dataA = parseDate(a.dataVencimento)
+      const dataB = parseDate(b.dataVencimento)
+
       if (ordenacaoVencimento === 'asc') {
         return dataA - dataB
       } else {

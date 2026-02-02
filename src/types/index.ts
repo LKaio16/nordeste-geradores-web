@@ -187,6 +187,7 @@ export interface Conta {
   id: string
   tipo: TipoConta
   clienteId?: string
+  fornecedorId?: string
   descricao: string
   valor: number
   dataVencimento: string
@@ -198,6 +199,7 @@ export interface Conta {
   categoriaFinanceira?: CategoriaFinanceira
   subcategoria?: string
   cliente?: Cliente
+  fornecedor?: Fornecedor
   createdAt: string
   updatedAt: string
 }
@@ -378,6 +380,7 @@ export enum CategoriaFinanceira {
 export interface ContaRequest {
   tipo: TipoConta
   clienteId?: string
+  fornecedorId?: string
   descricao: string
   valor: number
   dataVencimento: string
