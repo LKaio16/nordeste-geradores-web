@@ -799,8 +799,8 @@ export function NotaFiscalFormPage() {
         </div>
       </form>
 
-      {/* Botão Fixo para Adicionar Item - posicionado no lado esquerdo para não interferir */}
-      <div className="fixed bottom-6 left-6 z-50">
+      {/* Botão Fixo para Adicionar Item - posicionado respeitando o menu lateral */}
+      <div className="fixed bottom-6 z-50 left-0 right-0 flex justify-center lg:justify-start lg:left-[calc(256px+1.5rem)] lg:right-auto">
         <Button
           type="button"
           onClick={() => addItem(true)}
