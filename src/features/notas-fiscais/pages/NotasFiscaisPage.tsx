@@ -259,12 +259,9 @@ export function NotasFiscaisPage() {
                       >
                         <option value="">Todas</option>
                         <option value={FormaPagamento.PIX}>PIX</option>
-                        <option value={FormaPagamento.DINHEIRO}>Dinheiro</option>
-                        <option value={FormaPagamento.CARTAO_CREDITO}>Cartão de Crédito</option>
-                        <option value={FormaPagamento.CARTAO_DEBITO}>Cartão de Débito</option>
+                        <option value={FormaPagamento.CARTAO}>Cartão</option>
                         <option value={FormaPagamento.BOLETO}>Boleto</option>
                         <option value={FormaPagamento.TRANSFERENCIA}>Transferência</option>
-                        <option value={FormaPagamento.CHEQUE}>Cheque</option>
                       </select>
                     </div>
 
