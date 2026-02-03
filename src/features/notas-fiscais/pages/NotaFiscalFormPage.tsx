@@ -212,11 +212,24 @@ export function NotaFiscalFormPage() {
     }
   }
 
-  const addItem = () => {
+  const addItem = (scrollToNew = true) => {
     setFormData({
       ...formData,
       itens: [...formData.itens, { ...emptyItem }],
     })
+    
+    // Scroll automático para o novo item após um pequeno delay
+    if (scrollToNew) {
+      setTimeout(() => {
+        const itemsContainer = document.getElementById('itens-container')
+        if (itemsContainer) {
+          const lastItem = itemsContainer.lastElementChild
+          if (lastItem) {
+            lastItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }
+        }
+      }, 100)
+    }
   }
 
   const removeItem = (index: number) => {
@@ -551,15 +564,15 @@ export function NotaFiscalFormPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Receipt className="h-5 w-5" />
-                Itens da Nota
+                Itens da Nota ({formData.itens.length})
               </CardTitle>
-              <Button type="button" variant="outline" onClick={addItem} className="gap-2">
+              <Button type="button" variant="outline" onClick={() => addItem(true)} className="gap-2">
                 <PlusCircle className="h-4 w-4" />
                 Adicionar Item
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4" id="itens-container">
             {formData.itens.map((item, index) => (
               <motion.div
                 key={index}
@@ -718,6 +731,42 @@ export function NotaFiscalFormPage() {
                     </div>
                   </div>
                 </div>
+                
+                {/* Botão para adicionar item após este */}
+                <div className="flex justify-end pt-2 border-t border-slate-100 mt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Adicionar item após o atual
+                      const newItens = [...formData.itens]
+                      newItens.splice(index + 1, 0, { ...emptyItem })
+                      setFormData({ ...formData, itens: newItens })
+                      
+                      // Scroll para o novo item
+                      setTimeout(() => {
+                        const itemsContainer = document.getElementById('itens-container')
+                        if (itemsContainer) {
+                          const newItemIndex = index + 1
+                          const newItem = itemsContainer.children[newItemIndex]
+                          if (newItem) {
+                            newItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                            // Focar no primeiro input do novo item
+                            const firstInput = newItem.querySelector('input, select') as HTMLElement
+                            if (firstInput) {
+                              setTimeout(() => firstInput.focus(), 300)
+                            }
+                          }
+                        }
+                      }, 100)
+                    }}
+                    className="gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Adicionar Item Abaixo
+                  </Button>
+                </div>
               </motion.div>
             ))}
 
@@ -749,6 +798,19 @@ export function NotaFiscalFormPage() {
           </Button>
         </div>
       </form>
+
+      {/* Botão Fixo para Adicionar Item */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          type="button"
+          onClick={() => addItem(true)}
+          className="gap-2 shadow-lg h-12 px-6 rounded-full"
+          size="lg"
+        >
+          <PlusCircle className="h-5 w-5" />
+          Adicionar Item
+        </Button>
+      </div>
 
       {/* Modal de Cadastro Rápido de Produto */}
       <Dialog open={showProdutoModal} onOpenChange={setShowProdutoModal}>
