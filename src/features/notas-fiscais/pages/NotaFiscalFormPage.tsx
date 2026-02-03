@@ -799,8 +799,8 @@ export function NotaFiscalFormPage() {
         </div>
       </form>
 
-      {/* Botão Fixo para Adicionar Item */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Botão Fixo para Adicionar Item - posicionado acima dos botões de ação */}
+      <div className="fixed bottom-24 right-6 z-50">
         <Button
           type="button"
           onClick={() => addItem(true)}
