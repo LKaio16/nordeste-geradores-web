@@ -156,7 +156,7 @@ export function GeradoresPage() {
                         </div>
                         <div>
                           <CardTitle className="text-lg">{gerador.modelo}</CardTitle>
-                          <p className="text-sm text-slate-500">{gerador.marca}</p>
+                          <p className="text-sm text-slate-500">{gerador.marca} - {gerador.codigo}</p>
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>

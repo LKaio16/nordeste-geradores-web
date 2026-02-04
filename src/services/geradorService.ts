@@ -4,6 +4,7 @@ import { api, API_ENDPOINTS } from '@/config/api'
 function formatGeradorFromResponse(gerador: any): Gerador {
   return {
     id: String(gerador.id),
+    codigo: gerador.codigo || '',
     modelo: gerador.modelo || '',
     marca: gerador.marca || '',
     potencia: gerador.potencia ? String(gerador.potencia) : '0',

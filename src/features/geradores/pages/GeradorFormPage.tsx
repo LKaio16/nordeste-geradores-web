@@ -24,6 +24,7 @@ export function GeradorFormPage() {
   const [error, setError] = useState('')
 
   const [formData, setFormData] = useState<GeradorRequest>({
+    codigo: '',
     modelo: '',
     potencia: '',
     numeroSerie: '',
@@ -45,6 +46,7 @@ export function GeradorFormPage() {
       setLoadingGerador(true)
       const gerador = await geradorService.buscarPorId(geradorId)
       setFormData({
+        codigo: gerador.codigo,
         modelo: gerador.modelo,
         potencia: gerador.potencia,
         numeroSerie: gerador.numeroSerie,
@@ -164,6 +166,17 @@ export function GeradorFormPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="codigo">Código</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo || ''}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                  placeholder="Ex: GER-001 (gerado automaticamente se vazio)"
+                />
+                <p className="text-xs text-slate-500">Deixe em branco para gerar automaticamente</p>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="modelo">Modelo *</Label>
                 <Input

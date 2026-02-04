@@ -125,6 +125,7 @@ export interface Fornecedor {
 
 export interface Gerador {
   id: string
+  codigo: string
   modelo: string
   potencia: string
   numeroSerie: string
@@ -333,6 +334,7 @@ export interface FornecedorRequest {
 }
 
 export interface GeradorRequest {
+  codigo?: string
   modelo: string
   potencia: string
   numeroSerie: string

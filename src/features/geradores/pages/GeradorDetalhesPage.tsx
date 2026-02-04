@@ -122,6 +122,10 @@ export function GeradorDetalhesPage() {
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div>
+                <span className="text-sm text-slate-500">Código</span>
+                <p className="font-semibold text-slate-900">{gerador.codigo}</p>
+              </div>
+              <div>
                 <span className="text-sm text-slate-500">Modelo</span>
                 <p className="font-semibold text-slate-900">{gerador.modelo}</p>
               </div>
