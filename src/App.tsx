@@ -13,6 +13,8 @@ import { FornecedoresPage } from './features/fornecedores/pages/FornecedoresPage
 import { FornecedorFormPage } from './features/fornecedores/pages/FornecedorFormPage'
 import { FornecedorDetalhesPage } from './features/fornecedores/pages/FornecedorDetalhesPage'
 import { GeradoresPage } from './features/geradores/pages/GeradoresPage'
+import { GeradorFormPage } from './features/geradores/pages/GeradorFormPage'
+import { GeradorDetalhesPage } from './features/geradores/pages/GeradorDetalhesPage'
 import { LocacoesPage } from './features/locacoes/pages/LocacoesPage'
 import { OrdensServicoPage } from './features/ordens-servico/pages/OrdensServicoPage'
 import { ContasPage } from './features/financeiro/pages/ContasPage'
@@ -59,6 +61,9 @@ function App() {
             <Route path="fornecedores/:id" element={<FornecedorDetalhesPage />} />
             <Route path="fornecedores/:id/editar" element={<FornecedorFormPage />} />
             <Route path="geradores" element={<GeradoresPage />} />
+            <Route path="geradores/novo" element={<GeradorFormPage />} />
+            <Route path="geradores/:id" element={<GeradorDetalhesPage />} />
+            <Route path="geradores/:id/editar" element={<GeradorFormPage />} />
             <Route path="locacoes" element={<LocacoesPage />} />
             <Route path="ordens-servico" element={<OrdensServicoPage />} />
             <Route path="contas" element={<ContasPage />} />
