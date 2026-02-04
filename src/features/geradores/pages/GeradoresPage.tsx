@@ -16,8 +16,12 @@ import {
   Calendar,
   Hash,
   Building2,
+  Grid3x3,
+  Table as TableIcon,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+
+type ViewMode = 'cards' | 'table'
 
 export function GeradoresPage() {
   const navigate = useNavigate()
@@ -25,6 +29,7 @@ export function GeradoresPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusGerador | ''>('')
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
 
   useEffect(() => {
     carregarGeradores()
@@ -65,6 +70,7 @@ export function GeradoresPage() {
 
   const filteredGeradores = geradores.filter((gerador) => {
     const matchesSearch =
+      gerador.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       gerador.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       gerador.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
       gerador.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +111,7 @@ export function GeradoresPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Buscar por modelo, marca, número de série ou potência..."
+            placeholder="Buscar por código, modelo, marca, número de série ou potência..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -122,6 +128,24 @@ export function GeradoresPage() {
           <option value={StatusGerador.MANUTENCAO}>Em Manutenção</option>
           <option value={StatusGerador.INATIVO}>Inativo</option>
         </select>
+        <div className="flex gap-1 border border-slate-300 rounded-md overflow-hidden">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+            className="rounded-none"
+          >
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="rounded-none"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Lista de Geradores */}
@@ -136,7 +160,7 @@ export function GeradoresPage() {
             </p>
           </CardContent>
         </Card>
-      ) : (
+      ) : viewMode === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredGeradores.map((gerador) => {
             const statusInfo = formatStatus(gerador.status)
@@ -155,8 +179,8 @@ export function GeradoresPage() {
                           <Zap className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg">{gerador.modelo}</CardTitle>
-                          <p className="text-sm text-slate-500">{gerador.marca} - {gerador.codigo}</p>
+                          <CardTitle className="text-lg">{gerador.codigo}</CardTitle>
+                          <p className="text-sm text-slate-500">{gerador.modelo} - {gerador.marca}</p>
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
@@ -217,6 +241,96 @@ export function GeradoresPage() {
             )
           })}
         </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Código</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Modelo</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Marca</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Nº Série</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Potência</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ano</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Horímetro</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {filteredGeradores.map((gerador) => {
+                    const statusInfo = formatStatus(gerador.status)
+                    return (
+                      <motion.tr
+                        key={gerador.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="font-semibold text-slate-900">{gerador.codigo}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-900">{gerador.modelo}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-600">{gerador.marca}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-600">{gerador.numeroSerie}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-600">{gerador.potencia}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-600">{gerador.anoFabricacao}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-slate-600">{gerador.horimetro.toLocaleString('pt-BR')}h</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/geradores/${gerador.id}`)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/geradores/${gerador.id}/editar`)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(gerador.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
