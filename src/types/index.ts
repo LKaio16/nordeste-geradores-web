@@ -42,14 +42,13 @@ export enum StatusLocacao {
 }
 
 export enum TipoOrdemServico {
-  PREVENTIVA = 'PREVENTIVA',
-  CORRETIVA = 'CORRETIVA',
-  INSTALACAO = 'INSTALACAO',
-  RETIRADA = 'RETIRADA',
+  ENTREGA = 'ENTREGA',
+  RECOLHIMENTO = 'RECOLHIMENTO',
+  MANUTENCAO = 'MANUTENCAO',
 }
 
 export enum StatusOrdemServico {
-  ABERTA = 'ABERTA',
+  PENDENTE = 'PENDENTE',
   EM_ANDAMENTO = 'EM_ANDAMENTO',
   CONCLUIDA = 'CONCLUIDA',
   CANCELADA = 'CANCELADA',
@@ -76,6 +75,25 @@ export enum FormaPagamento {
   TRANSFERENCIA = 'TRANSFERENCIA',
   PIX = 'PIX',
   CARTAO = 'CARTAO',
+}
+
+export enum TipoProposta {
+  MENSAL = 'MENSAL',
+  EVENTO = 'EVENTO',
+}
+
+export enum StatusProposta {
+  RASCUNHO = 'RASCUNHO',
+  ENVIADA = 'ENVIADA',
+  APROVADA = 'APROVADA',
+  RECUSADA = 'RECUSADA',
+}
+
+export enum CategoriaPropostaItem {
+  GERADOR = 'GERADOR',
+  CABOS = 'CABOS',
+  FRETE = 'FRETE',
+  SERVICO = 'SERVICO',
 }
 
 // Entities
@@ -157,23 +175,53 @@ export interface Locacao {
   updatedAt: string
 }
 
+export interface LocacaoRequest {
+  clienteId: string
+  geradorId: string
+  tipo: TipoLocacao
+  dataInicio: string
+  dataFim?: string
+  valorMensal: number
+  status: StatusLocacao
+  observacoes?: string
+  horimetroInicial?: number
+}
+
 export interface OrdemServico {
   id: string
   numero: string
   tipo: TipoOrdemServico
-  locacaoId?: string
+  locacaoId: string
   geradorId: string
   tecnicoResponsavelId: string
-  dataAbertura: string
-  dataConclusao?: string
-  descricao: string
-  observacoes?: string
+  dataAgendada: string
   status: StatusOrdemServico
+  observacoes?: string
+  horimetroInicial?: number
+  horimetroFinal?: number
+  dataExecucao?: string
+  assinaturaCliente?: boolean
+  assinaturaDigital?: string
+  locacao?: Locacao
   gerador?: Gerador
   tecnicoResponsavel?: Usuario
   fotos?: OrdemServicoFoto[]
   createdAt: string
   updatedAt: string
+}
+
+export interface OrdemServicoRequest {
+  tipo: TipoOrdemServico
+  locacaoId: string
+  geradorId: string
+  tecnicoResponsavelId: string
+  dataAgendada: string
+  status: StatusOrdemServico
+  observacoes?: string
+  horimetroInicial?: number
+  horimetroFinal?: number
+  assinaturaCliente?: boolean
+  assinaturaDigital?: string
 }
 
 export interface OrdemServicoFoto {
@@ -209,6 +257,19 @@ export interface ContaAuditoria {
   id: string
   contaId: string
   usuario: Usuario
+  acao: string
+  campoAlterado?: string
+  valorAnterior?: string
+  valorNovo?: string
+  observacoes?: string
+  dataAcao: string
+}
+
+export interface GeradorAuditoria {
+  id: string
+  geradorId: string
+  usuarioId: string
+  usuarioNome: string
   acao: string
   campoAlterado?: string
   valorAnterior?: string
@@ -393,6 +454,49 @@ export interface ContaRequest {
   categoria?: string
   categoriaFinanceira?: CategoriaFinanceira
   subcategoria?: string
+}
+
+export interface PropostaItem {
+  id: string
+  categoria: CategoriaPropostaItem
+  descricao: string
+  quantidade: number
+  valorUnitario: number
+  valorTotal: number
+}
+
+export interface Proposta {
+  id: string
+  numero: string
+  cliente: Cliente
+  tipo: TipoProposta
+  dataEmissao: string
+  validade: string
+  observacoes?: string
+  valorTotal: number
+  status: StatusProposta
+  formaPagamento?: string
+  itens: PropostaItem[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PropostaItemRequest {
+  categoria: CategoriaPropostaItem
+  descricao: string
+  quantidade: number
+  valorUnitario: number
+}
+
+export interface PropostaRequest {
+  clienteId: string
+  tipo: TipoProposta
+  dataEmissao: string
+  validade: string
+  observacoes?: string
+  status: StatusProposta
+  formaPagamento?: string
+  itens: PropostaItemRequest[]
 }
 
 export interface UsuarioRequest {

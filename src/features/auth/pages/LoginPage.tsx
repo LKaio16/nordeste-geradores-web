@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Zap, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import logo from '@/assets/images/logo.png'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -68,10 +69,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#203d7b]/5 via-[#203d7b]/10 to-[#1a2f5f]/15 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[#203d7b]/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#2d4f9a]/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#203d7b]/10 rounded-full blur-3xl"></div>
       </div>
 
       <motion.div
@@ -80,19 +82,21 @@ export function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <Card className="border-0 shadow-2xl shadow-blue-500/20 backdrop-blur-sm bg-white/95">
-          <CardHeader className="space-y-4 text-center pb-8">
+        <Card className="border-2 border-[#203d7b]/20 shadow-2xl shadow-[#203d7b]/30 backdrop-blur-sm bg-white/98">
+          <CardHeader className="space-y-4 text-center pb-8 px-8 pt-8">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="mx-auto relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/40"
+              className="mx-auto flex items-center justify-center py-4"
             >
-              <Zap className="h-10 w-10 text-white" />
-              <div className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-emerald-400 border-4 border-white shadow-sm"></div>
+              <img 
+                src={logo} 
+                alt="Nordeste Geradores" 
+                className="h-16 w-auto object-contain"
+              />
             </motion.div>
             <div>
-              <CardTitle className="text-2xl text-slate-900">Nordeste Geradores</CardTitle>
               <CardDescription className="text-base mt-2">
                 Sistema de Gestão Integrado
               </CardDescription>
@@ -140,7 +144,7 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                className="w-full bg-gradient-to-r from-[#203d7b] to-[#2d4f9a] hover:from-[#1a2f5f] hover:to-[#203d7b] text-white shadow-lg shadow-[#203d7b]/30 transition-all duration-300 font-semibold"
                 disabled={isLoading}
               >
                 {isLoading ? 'Entrando...' : 'Entrar'}

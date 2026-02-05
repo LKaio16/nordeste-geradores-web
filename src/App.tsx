@@ -16,7 +16,11 @@ import { GeradoresPage } from './features/geradores/pages/GeradoresPage'
 import { GeradorFormPage } from './features/geradores/pages/GeradorFormPage'
 import { GeradorDetalhesPage } from './features/geradores/pages/GeradorDetalhesPage'
 import { LocacoesPage } from './features/locacoes/pages/LocacoesPage'
+import { LocacaoFormPage } from './features/locacoes/pages/LocacaoFormPage'
+import { LocacaoDetalhesPage } from './features/locacoes/pages/LocacaoDetalhesPage'
 import { OrdensServicoPage } from './features/ordens-servico/pages/OrdensServicoPage'
+import { OrdemServicoFormPage } from './features/ordens-servico/pages/OrdemServicoFormPage'
+import { OrdemServicoDetalhesPage } from './features/ordens-servico/pages/OrdemServicoDetalhesPage'
 import { ContasPage } from './features/financeiro/pages/ContasPage'
 import { ContaFormPage } from './features/financeiro/pages/ContaFormPage'
 import { ContaDetalhesPage } from './features/financeiro/pages/ContaDetalhesPage'
@@ -24,6 +28,8 @@ import { RelatoriosFinanceirosPage } from './features/financeiro/pages/Relatorio
 import { EstoquePage } from './features/estoque/pages/EstoquePage'
 import { ProdutosPage } from './features/produtos/pages/ProdutosPage'
 import { PropostasPage } from './features/propostas/pages/PropostasPage'
+import { PropostaFormPage } from './features/propostas/pages/PropostaFormPage'
+import { PropostaDetalhesPage } from './features/propostas/pages/PropostaDetalhesPage'
 import { UsuariosPage } from './features/usuarios/pages/UsuariosPage'
 import { UsuarioFormPage } from './features/usuarios/pages/UsuarioFormPage'
 import { UsuarioDetalhesPage } from './features/usuarios/pages/UsuarioDetalhesPage'
@@ -65,7 +71,13 @@ function App() {
             <Route path="geradores/:id" element={<GeradorDetalhesPage />} />
             <Route path="geradores/:id/editar" element={<GeradorFormPage />} />
             <Route path="locacoes" element={<LocacoesPage />} />
+            <Route path="locacoes/novo" element={<LocacaoFormPage />} />
+            <Route path="locacoes/:id" element={<LocacaoDetalhesPage />} />
+            <Route path="locacoes/:id/editar" element={<LocacaoFormPage />} />
             <Route path="ordens-servico" element={<OrdensServicoPage />} />
+            <Route path="ordens-servico/novo" element={<OrdemServicoFormPage />} />
+            <Route path="ordens-servico/:id" element={<OrdemServicoDetalhesPage />} />
+            <Route path="ordens-servico/:id/editar" element={<OrdemServicoFormPage />} />
             <Route path="contas" element={<ContasPage />} />
             <Route path="contas/novo" element={<ContaFormPage />} />
             <Route path="contas/:id" element={<ContaDetalhesPage />} />
@@ -79,6 +91,9 @@ function App() {
             <Route path="produtos/:id" element={<ProdutoDetalhesPage />} />
             <Route path="produtos/:id/editar" element={<ProdutoFormPage />} />
             <Route path="propostas" element={<PropostasPage />} />
+            <Route path="propostas/novo" element={<PropostaFormPage />} />
+            <Route path="propostas/:id" element={<PropostaDetalhesPage />} />
+            <Route path="propostas/:id/editar" element={<PropostaFormPage />} />
             <Route
               path="usuarios"
               element={

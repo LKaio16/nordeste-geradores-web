@@ -138,7 +138,7 @@ export function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#203d7b] mx-auto mb-4"></div>
           <p className="text-slate-500">Carregando dashboard...</p>
         </div>
       </div>
@@ -204,16 +204,16 @@ export function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+          <Card className="border-2 border-[#203d7b]/30 bg-gradient-to-br from-[#203d7b]/10 to-[#2d4f9a]/10 shadow-md shadow-[#203d7b]/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600 mb-1">A Receber</p>
-                  <p className="text-3xl font-bold text-blue-900">
+                  <p className="text-sm font-medium text-[#203d7b] mb-1">A Receber</p>
+                  <p className="text-3xl font-bold text-[#1a2f5f]">
                     {formatCurrency(stats.totalContasReceber)}
                   </p>
                 </div>
-                <TrendingUp className="h-10 w-10 text-blue-600" />
+                <TrendingUp className="h-10 w-10 text-[#203d7b]" />
               </div>
             </CardContent>
           </Card>
@@ -288,16 +288,16 @@ export function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.5 }}
         >
-          <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+          <Card className="border-2 border-[#203d7b]/30 bg-gradient-to-br from-[#203d7b]/10 to-[#2d4f9a]/10 shadow-md shadow-[#203d7b]/10">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600 mb-1">Geradores Locados</p>
-                  <p className="text-3xl font-bold text-blue-900">
+                  <p className="text-sm font-medium text-[#203d7b] mb-1">Geradores Locados</p>
+                  <p className="text-3xl font-bold text-[#1a2f5f]">
                     {stats.geradoresLocados}
                   </p>
                 </div>
-                <Activity className="h-10 w-10 text-blue-600" />
+                <Activity className="h-10 w-10 text-[#203d7b]" />
               </div>
             </CardContent>
           </Card>
@@ -362,7 +362,7 @@ export function DashboardPage() {
                 <>
                   <Button
                     variant="outline"
-                    className="h-auto py-4 flex-col gap-2 hover:bg-blue-50 hover:border-blue-300"
+                    className="h-auto py-4 flex-col gap-2 hover:bg-[#203d7b]/10 hover:border-[#203d7b]/40"
                     onClick={() => navigate('/contas/novo')}
                   >
                     <Plus className="h-5 w-5" />
@@ -578,7 +578,7 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">Geradores Locados</span>
-              <span className="font-semibold text-blue-600">{stats.geradoresLocados}</span>
+              <span className="font-semibold text-[#203d7b]">{stats.geradoresLocados}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">Total de Clientes</span>
@@ -590,7 +590,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-blue-600" />
+              <DollarSign className="h-5 w-5 text-[#203d7b]" />
               Resumo Financeiro
             </CardTitle>
           </CardHeader>

@@ -13,8 +13,12 @@ import {
   Hash,
   Building2,
   FileText,
+  History,
+  Clock,
+  User,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { GeradorAuditoria } from '@/types'
 
 export function GeradorDetalhesPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,10 +26,13 @@ export function GeradorDetalhesPage() {
   const [gerador, setGerador] = useState<Gerador | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [historico, setHistorico] = useState<GeradorAuditoria[]>([])
+  const [loadingHistorico, setLoadingHistorico] = useState(false)
 
   useEffect(() => {
     if (id) {
       carregarGerador(id)
+      carregarHistorico(id)
     }
   }, [id])
 
@@ -38,6 +45,18 @@ export function GeradorDetalhesPage() {
       setError(err.message || 'Erro ao carregar gerador')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const carregarHistorico = async (geradorId: string) => {
+    try {
+      setLoadingHistorico(true)
+      const data = await geradorService.buscarHistorico(geradorId)
+      setHistorico(data)
+    } catch (err: any) {
+      console.error('Erro ao carregar histórico:', err)
+    } finally {
+      setLoadingHistorico(false)
     }
   }
 
@@ -199,6 +218,91 @@ export function GeradorDetalhesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Histórico de Alterações */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Alterações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingHistorico ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : historico.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <History className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p>Nenhum registro de auditoria encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {historico.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    className="border-l-4 border-blue-500 pl-4 py-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                              item.acao === 'CRIAR'
+                                ? 'bg-green-100 text-green-700'
+                                : item.acao === 'DELETAR'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            {item.acao === 'CRIAR'
+                              ? 'Criado'
+                              : item.acao === 'ATUALIZAR'
+                              ? 'Atualizado'
+                              : item.acao === 'DELETAR'
+                              ? 'Deletado'
+                              : item.acao}
+                          </span>
+                          {item.campoAlterado && (
+                            <span className="text-sm text-slate-600">
+                              Campo: <strong>{item.campoAlterado}</strong>
+                            </span>
+                          )}
+                        </div>
+                        {item.campoAlterado && item.valorAnterior !== null && item.valorNovo !== null && (
+                          <div className="text-sm text-slate-600 mb-2">
+                            <span className="line-through text-red-500 mr-2">{item.valorAnterior}</span>
+                            <span className="text-green-600">→ {item.valorNovo}</span>
+                          </div>
+                        )}
+                        {item.observacoes && (
+                          <p className="text-sm text-slate-600 mb-2">{item.observacoes}</p>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <User className="h-3 w-3" />
+                          <span>{item.usuarioNome}</span>
+                          <span className="mx-1">•</span>
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(item.dataAcao)} {new Date(item.dataAcao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

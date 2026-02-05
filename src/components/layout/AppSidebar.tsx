@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/utils/cn'
 import { useEffect } from 'react'
 import { NivelAcesso } from '@/types'
+import logo from '@/assets/images/logo.png'
 
 interface NavItem {
   title: string
@@ -76,7 +77,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={cn(
-      "fixed left-0 top-0 h-full z-40 border-r border-slate-200 bg-white shadow-xl transition-all duration-300",
+      "fixed left-0 top-0 h-full z-40 border-r-2 border-nordeste/20 bg-gradient-to-b from-white to-slate-50/50 shadow-xl transition-all duration-300",
       sidebarWidth,
       // Mobile: sempre escondido por padrão, mostrado quando open
       isMobile 
@@ -86,21 +87,25 @@ export function AppSidebar() {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className={cn(
-          "border-b border-slate-200 transition-all duration-300",
+          "border-b-2 border-nordeste/30 bg-gradient-to-r from-nordeste/5 to-transparent transition-all duration-300",
           collapsed ? "p-4" : "p-6"
         )}>
           <div className={cn(
             "flex items-center gap-3 transition-all duration-300",
             collapsed && "justify-center"
           )}>
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shrink-0">
-              <Zap className="h-7 w-7 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-slate-900 truncate">Nordeste Geradores</h2>
-                <p className="text-xs text-slate-500 truncate">Sistema de Gestão</p>
-              </div>
+            {collapsed ? (
+              <img 
+                src={logo} 
+                alt="Nordeste Geradores" 
+                className="h-12 w-auto object-contain"
+              />
+            ) : (
+              <img 
+                src={logo} 
+                alt="Nordeste Geradores" 
+                className="h-16 w-auto object-contain"
+              />
             )}
           </div>
         </div>
@@ -132,14 +137,15 @@ export function AppSidebar() {
             {/* Financeiro & Almoxarifado */}
             <div>
               {!collapsed && (
-                <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
                   Financeiro & Almoxarifado
                 </p>
               )}
               <nav className="space-y-1">
                 {financialItems.map((item) => {
                   const Icon = item.icon
-                  const isActive = location.pathname === item.path
+                  const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                   return (
                     <button
                       key={item.path}
@@ -148,14 +154,14 @@ export function AppSidebar() {
                         'w-full flex items-center rounded-lg text-sm font-medium transition-colors group relative',
                         collapsed ? 'justify-center px-3 py-2.5' : 'gap-3 px-3 py-2',
                         isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-[#203d7b] text-white shadow-md shadow-[#203d7b]/30'
+                          : 'text-slate-700 hover:bg-[#203d7b]/10 hover:text-[#203d7b]'
                       )}
                       title={collapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5 shrink-0" />
+                      <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : "")} />
                       {!collapsed && (
-                        <span className="truncate">{item.title}</span>
+                        <span className={cn("truncate", isActive ? "text-white" : "")}>{item.title}</span>
                       )}
                       {/* Tooltip quando colapsado */}
                       {collapsed && (
@@ -172,14 +178,15 @@ export function AppSidebar() {
             {/* Locações & Serviços */}
             <div>
               {!collapsed && (
-                <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
                   Locações & Serviços
                 </p>
               )}
               <nav className="space-y-1">
                 {rentalItems.map((item) => {
                   const Icon = item.icon
-                  const isActive = location.pathname === item.path
+                  const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                   return (
                     <button
                       key={item.path}
@@ -188,14 +195,14 @@ export function AppSidebar() {
                         'w-full flex items-center rounded-lg text-sm font-medium transition-colors group relative',
                         collapsed ? 'justify-center px-3 py-2.5' : 'gap-3 px-3 py-2',
                         isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-[#203d7b] text-white shadow-md shadow-[#203d7b]/30'
+                          : 'text-slate-700 hover:bg-[#203d7b]/10 hover:text-[#203d7b]'
                       )}
                       title={collapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5 shrink-0" />
+                      <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : "")} />
                       {!collapsed && (
-                        <span className="truncate">{item.title}</span>
+                        <span className={cn("truncate", isActive ? "text-white" : "")}>{item.title}</span>
                       )}
                       {/* Tooltip quando colapsado */}
                       {collapsed && (
@@ -212,7 +219,8 @@ export function AppSidebar() {
             {/* Administração */}
             <div>
               {!collapsed && (
-                <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
                   Administração
                 </p>
               )}
@@ -227,7 +235,7 @@ export function AppSidebar() {
                   })
                   .map((item) => {
                   const Icon = item.icon
-                  const isActive = location.pathname === item.path
+                  const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                   return (
                     <button
                       key={item.path}
@@ -236,14 +244,14 @@ export function AppSidebar() {
                         'w-full flex items-center rounded-lg text-sm font-medium transition-colors group relative',
                         collapsed ? 'justify-center px-3 py-2.5' : 'gap-3 px-3 py-2',
                         isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-[#203d7b] text-white shadow-md shadow-[#203d7b]/30'
+                          : 'text-slate-700 hover:bg-[#203d7b]/10 hover:text-[#203d7b]'
                       )}
                       title={collapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5 shrink-0" />
+                      <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : "")} />
                       {!collapsed && (
-                        <span className="truncate">{item.title}</span>
+                        <span className={cn("truncate", isActive ? "text-white" : "")}>{item.title}</span>
                       )}
                       {/* Tooltip quando colapsado */}
                       {collapsed && (
@@ -261,13 +269,13 @@ export function AppSidebar() {
 
         {/* Footer - Informações do Usuário */}
         <div className={cn(
-          "border-t border-slate-200 transition-all duration-300 bg-slate-50/50",
+          "border-t-2 border-nordeste/30 transition-all duration-300 bg-gradient-to-t from-nordeste/5 to-transparent",
           collapsed ? "p-3" : "p-4"
         )}>
           {!collapsed && user && (
-            <div className="flex items-center gap-3 px-3 py-2.5 mb-3 rounded-lg bg-white border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 px-3 py-2.5 mb-3 rounded-lg bg-white border-2 border-nordeste/20 shadow-md shadow-nordeste/10">
               {/* Avatar/Foto do usuário */}
-              <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-semibold text-sm shrink-0 ring-2 ring-white shadow-sm">
+              <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-nordeste to-nordeste-light flex items-center justify-center text-white font-semibold text-sm shrink-0 ring-2 ring-nordeste/20 shadow-sm">
                 {user?.foto ? (
                   <img
                     src={user.foto}
@@ -296,7 +304,7 @@ export function AppSidebar() {
           
           {collapsed && user && (
             <div className="flex justify-center mb-3">
-              <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-white shadow-sm">
+              <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-nordeste to-nordeste-light flex items-center justify-center text-white font-semibold text-sm ring-2 ring-nordeste/20 shadow-sm">
                 {user?.foto ? (
                   <img
                     src={user.foto}

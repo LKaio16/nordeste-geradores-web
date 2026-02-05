@@ -1,4 +1,4 @@
-import { Gerador, GeradorRequest } from '@/types'
+import { Gerador, GeradorRequest, GeradorAuditoria } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 function formatGeradorFromResponse(gerador: any): Gerador {
@@ -70,6 +70,30 @@ class GeradorService {
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao buscar geradores disponíveis')
     }
+  }
+
+  async buscarHistorico(id: string): Promise<GeradorAuditoria[]> {
+    try {
+      const response = await api.get<any[]>(API_ENDPOINTS.geradores.historico(id))
+      return response.data.map(formatAuditoriaFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao buscar histórico do gerador')
+    }
+  }
+}
+
+function formatAuditoriaFromResponse(auditoria: any): GeradorAuditoria {
+  return {
+    id: String(auditoria.id),
+    geradorId: String(auditoria.geradorId),
+    usuarioId: String(auditoria.usuarioId),
+    usuarioNome: auditoria.usuarioNome || '',
+    acao: auditoria.acao || '',
+    campoAlterado: auditoria.campoAlterado || undefined,
+    valorAnterior: auditoria.valorAnterior || undefined,
+    valorNovo: auditoria.valorNovo || undefined,
+    observacoes: auditoria.observacoes || undefined,
+    dataAcao: auditoria.dataAcao ? (typeof auditoria.dataAcao === 'string' ? auditoria.dataAcao : auditoria.dataAcao.toString()) : new Date().toISOString(),
   }
 }
 

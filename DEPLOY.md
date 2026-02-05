@@ -126,3 +126,4 @@ O frontend está preparado para detectar a resposta HTML padrão do ngrok (pági
 5. Faça o deploy no GitHub Pages
 
 
+

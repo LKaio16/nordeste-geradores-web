@@ -13,6 +13,12 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        nordeste: {
+          DEFAULT: '#203d7b',
+          light: '#2d4f9a',
+          dark: '#1a2f5f',
+          lighter: '#3d5fb0',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

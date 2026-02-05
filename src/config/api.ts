@@ -194,6 +194,7 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `/api/geradores/${id}`,
     disponiveis: '/api/geradores/disponiveis',
     horimetro: (id: string) => `/api/geradores/${id}/horimetro`,
+    historico: (id: string) => `/api/geradores/${id}/historico`,
   },
   locacoes: {
     list: '/api/locacoes',
@@ -224,6 +225,14 @@ export const API_ENDPOINTS = {
       if (dataFim) params.append('dataFim', dataFim);
       return `/api/relatorios/financeiro?${params.toString()}`;
     },
+  },
+  propostas: {
+    list: '/api/propostas',
+    get: (id: string) => `/api/propostas/${id}`,
+    create: '/api/propostas',
+    update: (id: string) => `/api/propostas/${id}`,
+    delete: (id: string) => `/api/propostas/${id}`,
+    pdf: (id: string) => `/api/propostas/${id}/pdf`,
   },
   notasFiscais: {
     list: '/api/notas-fiscais',
