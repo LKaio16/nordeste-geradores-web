@@ -601,7 +601,8 @@ export function ContasPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
-                        className={`border-b border-slate-100 hover:bg-slate-50 ${vencida ? 'bg-red-50/50' : ''}`}
+                        className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer ${vencida ? 'bg-red-50/50' : ''}`}
+                        onClick={() => navigate(`/contas/${conta.id}`)}
                       >
                         <td className="py-3 px-4">
                           <span
@@ -611,7 +612,7 @@ export function ContasPage() {
                                 : 'bg-green-100 text-green-700'
                             }`}
                           >
-                            {conta.tipo === TipoConta.PAGAR ? 'A Pagar' : 'A Receber'}
+                            {conta.tipo === TipoConta.PAGAR ? 'Pagar' : 'Receber'}
                           </span>
                         </td>
                         <td className="py-3 px-4">
@@ -667,7 +668,10 @@ export function ContasPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/contas/${conta.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/contas/${conta.id}`)
+                              }}
                               className="h-8 w-8"
                               title="Visualizar"
                             >
@@ -676,7 +680,10 @@ export function ContasPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/contas/${conta.id}/editar`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/contas/${conta.id}/editar`)
+                              }}
                               className="h-8 w-8"
                               title="Editar"
                             >
@@ -685,7 +692,10 @@ export function ContasPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(conta.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(conta.id)
+                              }}
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                               title="Excluir"
                             >

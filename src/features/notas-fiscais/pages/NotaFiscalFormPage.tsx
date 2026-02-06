@@ -230,6 +230,8 @@ export function NotaFiscalFormPage() {
         dataEmissao: nota.dataEmissao,
         numeroNota: nota.numeroNota,
         formaPagamento: nota.formaPagamento,
+        fornecedorId: nota.fornecedorId,
+        clienteId: nota.clienteId,
         itens: nota.itens.map(item => ({
           produtoId: item.produtoId,
           descricao: item.descricao,
@@ -238,10 +240,24 @@ export function NotaFiscalFormPage() {
           desconto: item.desconto || 0,
         })),
       })
-      // Tentar encontrar o fornecedor pelo nome
-      const fornecedor = fornecedores.find(f => f.nome === nota.fornecedor)
-      if (fornecedor) {
-        setSelectedFornecedorId(fornecedor.id)
+      
+      // Configurar seleção de fornecedor ou cliente
+      if (nota.clienteId) {
+        setSelectedClienteId(nota.clienteId)
+        setSelectedFornecedorId('')
+        setTipoSelecao('CLIENTE')
+        const cliente = clientes.find(c => c.id === nota.clienteId)
+        if (cliente) {
+          setClienteSearchTerm(cliente.nome)
+        }
+      } else if (nota.fornecedorId) {
+        setSelectedFornecedorId(nota.fornecedorId)
+        setSelectedClienteId('')
+        setTipoSelecao('FORNECEDOR')
+        const fornecedor = fornecedores.find(f => f.id === nota.fornecedorId)
+        if (fornecedor) {
+          setFornecedorSearchTerm(fornecedor.nome)
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar nota fiscal')
@@ -254,9 +270,9 @@ export function NotaFiscalFormPage() {
     e.preventDefault()
     setError('')
 
-    // Validação: para notas de entrada, deve ter fornecedor OU cliente selecionado
-    if (formData.tipo === TipoNotaFiscal.ENTRADA && !selectedFornecedorId && !selectedClienteId) {
-      setError('Por favor, selecione um fornecedor ou cliente cadastrado para a nota de entrada')
+    // Validação: deve ter fornecedor OU cliente selecionado
+    if (!selectedFornecedorId && !selectedClienteId) {
+      setError('Por favor, selecione um fornecedor ou cliente cadastrado')
       return
     }
 
@@ -686,15 +702,14 @@ export function NotaFiscalFormPage() {
           </CardContent>
         </Card>
 
-        {/* Fornecedor/Cliente - Apenas para notas de ENTRADA */}
-        {formData.tipo === TipoNotaFiscal.ENTRADA && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Fornecedor ou Cliente
-              </CardTitle>
-            </CardHeader>
+        {/* Fornecedor/Cliente */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Fornecedor ou Cliente
+            </CardTitle>
+          </CardHeader>
             <CardContent className="space-y-4">
               {/* Seletor de Tipo */}
               <div className="space-y-2">
@@ -927,108 +942,13 @@ export function NotaFiscalFormPage() {
               )}
 
               {/* Validação: obrigatório selecionar */}
-              {!selectedFornecedorId && !selectedClienteId && formData.tipo === TipoNotaFiscal.ENTRADA && (
+              {!selectedFornecedorId && !selectedClienteId && (
                 <div className="p-3 bg-yellow-50 rounded-lg text-sm text-yellow-700">
                   Por favor, selecione um {tipoSelecao === 'FORNECEDOR' ? 'fornecedor' : 'cliente'} cadastrado ou crie um novo.
                 </div>
               )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Fornecedor - Para notas de SAÍDA (mantém comportamento original) */}
-        {formData.tipo === TipoNotaFiscal.SAIDA && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Fornecedor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Seletor de Fornecedor */}
-              <div className="space-y-2">
-                <Label>Selecionar Fornecedor Cadastrado</Label>
-                <div className="relative">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder="Buscar fornecedor por nome ou CNPJ..."
-                      value={fornecedorSearchTerm}
-                      onChange={(e) => {
-                        setFornecedorSearchTerm(e.target.value)
-                        setShowFornecedorDropdown(true)
-                      }}
-                      onFocus={() => setShowFornecedorDropdown(true)}
-                      className="pl-10"
-                    />
-                  </div>
-                  {showFornecedorDropdown && fornecedorSearchTerm && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {loadingFornecedores ? (
-                        <div className="p-3 text-center text-slate-500">Carregando...</div>
-                      ) : filteredFornecedores.length === 0 ? (
-                        <div className="p-3 text-center text-slate-500">Nenhum fornecedor encontrado</div>
-                      ) : (
-                        filteredFornecedores.map((fornecedor) => (
-                          <button
-                            key={fornecedor.id}
-                            type="button"
-                            onClick={() => handleSelectFornecedor(fornecedor)}
-                            className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
-                          >
-                            <div>
-                              <div className="font-medium">{fornecedor.nome}</div>
-                              <div className="text-sm text-slate-500">{fornecedor.cnpj}</div>
-                            </div>
-                            {selectedFornecedorId === fornecedor.id && (
-                              <span className="text-blue-600 text-sm">Selecionado</span>
-                            )}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Dados do Fornecedor */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fornecedor">Nome do Fornecedor *</Label>
-                  <Input
-                    id="fornecedor"
-                    value={formData.fornecedor}
-                    onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
-                    placeholder="Nome do fornecedor"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cnpjEmpresa">CNPJ *</Label>
-                  <Input
-                    id="cnpjEmpresa"
-                    value={formData.cnpjEmpresa}
-                    onChange={(e) => {
-                      const masked = maskCNPJ(e.target.value)
-                      setFormData({ ...formData, cnpjEmpresa: masked })
-                    }}
-                    placeholder="00.000.000/0000-00"
-                    required
-                    maxLength={18}
-                  />
-                </div>
-              </div>
-
-              {selectedFornecedorId && (
-                <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                  Fornecedor selecionado da base de dados. Os dados serão vinculados automaticamente.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Itens */}
         <Card>

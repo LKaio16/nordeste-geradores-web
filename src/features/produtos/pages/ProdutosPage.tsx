@@ -261,7 +261,8 @@ export function ProdutosPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => navigate(`/produtos/${produto.id}`)}
                     >
                       <td className="py-3 px-4">
                         <span className="font-medium">{produto.descricao}</span>
@@ -285,7 +286,10 @@ export function ProdutosPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/produtos/${produto.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/produtos/${produto.id}`)
+                            }}
                             className="h-8 w-8"
                             title="Visualizar"
                           >
@@ -294,7 +298,10 @@ export function ProdutosPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/produtos/${produto.id}/editar`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/produtos/${produto.id}/editar`)
+                            }}
                             className="h-8 w-8"
                             title="Editar"
                           >
@@ -303,7 +310,10 @@ export function ProdutosPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(produto.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(produto.id)
+                            }}
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             title="Excluir"
                           >

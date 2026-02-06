@@ -308,7 +308,8 @@ export function LocacoesPage() {
                         key={locacao.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/locacoes/${locacao.id}`)}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{locacao.numero}</div>
@@ -343,7 +344,10 @@ export function LocacoesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/locacoes/${locacao.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/locacoes/${locacao.id}`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />

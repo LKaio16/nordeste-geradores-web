@@ -267,7 +267,8 @@ export function GeradoresPage() {
                         key={gerador.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/geradores/${gerador.id}`)}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{gerador.codigo}</div>
@@ -300,7 +301,10 @@ export function GeradoresPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/geradores/${gerador.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/geradores/${gerador.id}`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
@@ -308,7 +312,10 @@ export function GeradoresPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/geradores/${gerador.id}/editar`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/geradores/${gerador.id}/editar`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />

@@ -328,7 +328,8 @@ export function UsuariosPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
-                        className="border-b border-slate-100 hover:bg-slate-50"
+                        className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                        onClick={() => navigate(`/usuarios/${usuario.id}`)}
                       >
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
@@ -387,7 +388,10 @@ export function UsuariosPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/usuarios/${usuario.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/usuarios/${usuario.id}`)
+                              }}
                               className="h-8 w-8"
                               title="Visualizar"
                             >

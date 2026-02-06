@@ -324,7 +324,8 @@ export function OrdensServicoPage() {
                         key={os.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/ordens-servico/${os.id}`)}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{os.numero}</div>
@@ -357,7 +358,10 @@ export function OrdensServicoPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/ordens-servico/${os.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/ordens-servico/${os.id}`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
@@ -365,7 +369,10 @@ export function OrdensServicoPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/ordens-servico/${os.id}/editar`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/ordens-servico/${os.id}/editar`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />

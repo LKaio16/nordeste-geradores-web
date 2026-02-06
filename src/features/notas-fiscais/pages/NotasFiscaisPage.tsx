@@ -22,6 +22,8 @@ import {
   Table as TableIcon,
   Filter,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -42,6 +44,8 @@ export function NotasFiscaisPage() {
     dataInicio?: string
     dataFim?: string
   }>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   useEffect(() => {
     carregarNotas()
@@ -91,32 +95,50 @@ export function NotasFiscaisPage() {
     return new Date(date).toLocaleDateString('pt-BR')
   }
 
-  const filteredNotas = notas.filter((nota) => {
-    // Busca por texto
-    const matchesSearch =
-      nota.numeroNota.includes(searchTerm) ||
-      nota.fornecedor.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotas = notas
+    .filter((nota) => {
+      // Busca por texto
+      const matchesSearch =
+        nota.numeroNota.includes(searchTerm) ||
+        nota.fornecedor.toLowerCase().includes(searchTerm.toLowerCase())
 
-    // Filtros
-    const matchesTipo = !filters.tipo || nota.tipo === filters.tipo
-    const matchesFormaPagamento =
-      !filters.formaPagamento || (nota.formaPagamento && nota.formaPagamento === filters.formaPagamento)
-    const matchesFornecedor =
-      !filters.fornecedorId ||
-      (nota.fornecedor &&
-        fornecedores.find((f) => f.id === filters.fornecedorId)?.nome === nota.fornecedor)
-    const matchesDataInicio = !filters.dataInicio || nota.dataEmissao >= filters.dataInicio
-    const matchesDataFim = !filters.dataFim || nota.dataEmissao <= filters.dataFim
+      // Filtros
+      const matchesTipo = !filters.tipo || nota.tipo === filters.tipo
+      const matchesFormaPagamento =
+        !filters.formaPagamento || (nota.formaPagamento && nota.formaPagamento === filters.formaPagamento)
+      const matchesFornecedor =
+        !filters.fornecedorId ||
+        (nota.fornecedor &&
+          fornecedores.find((f) => f.id === filters.fornecedorId)?.nome === nota.fornecedor)
+      const matchesDataInicio = !filters.dataInicio || nota.dataEmissao >= filters.dataInicio
+      const matchesDataFim = !filters.dataFim || nota.dataEmissao <= filters.dataFim
 
-    return (
-      matchesSearch &&
-      matchesTipo &&
-      matchesFormaPagamento &&
-      matchesFornecedor &&
-      matchesDataInicio &&
-      matchesDataFim
-    )
-  })
+      return (
+        matchesSearch &&
+        matchesTipo &&
+        matchesFormaPagamento &&
+        matchesFornecedor &&
+        matchesDataInicio &&
+        matchesDataFim
+      )
+    })
+    .sort((a, b) => {
+      // Ordenar por data de criação (mais recente primeiro)
+      const dateA = new Date(a.createdAt).getTime()
+      const dateB = new Date(b.createdAt).getTime()
+      return dateB - dateA
+    })
+
+  // Paginação
+  const totalPages = Math.ceil(filteredNotas.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedNotas = filteredNotas.slice(startIndex, endIndex)
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filters])
 
   const clearFilters = () => {
     setFilters({})
@@ -366,13 +388,14 @@ export function NotasFiscaisPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredNotas.map((nota) => (
+                  {paginatedNotas.map((nota) => (
                     <motion.tr
                       key={nota.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => navigate(`/notas-entrada/${nota.id}`)}
                     >
                       <td className="py-3 px-4">
                         <span className="font-medium">#{nota.numeroNota}</span>
@@ -416,7 +439,10 @@ export function NotasFiscaisPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/notas-entrada/${nota.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/notas-entrada/${nota.id}`)
+                            }}
                             className="h-8 w-8"
                             title="Visualizar"
                           >
@@ -451,7 +477,7 @@ export function NotasFiscaisPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredNotas.map((nota) => (
+                  {paginatedNotas.map((nota) => (
             <motion.div
               key={nota.id}
               initial={{ opacity: 0, y: 20 }}
@@ -542,6 +568,66 @@ export function NotasFiscaisPage() {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {/* Paginação */}
+      {filteredNotas.length > 0 && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredNotas.length)} de {filteredNotas.length} notas
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-10"
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="gap-2"
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

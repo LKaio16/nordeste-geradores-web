@@ -323,7 +323,8 @@ export function ClientesPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => navigate(`/clientes/${cliente.id}`)}
                     >
                       <td className="py-3 px-4">
                         <span className="font-medium">{cliente.nome}</span>
@@ -369,7 +370,10 @@ export function ClientesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/clientes/${cliente.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/clientes/${cliente.id}`)
+                            }}
                             className="h-8 w-8"
                             title="Visualizar"
                           >

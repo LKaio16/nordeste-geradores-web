@@ -322,7 +322,8 @@ export function PropostasPage() {
                         key={proposta.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/propostas/${proposta.id}`)}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{proposta.numero}</div>
@@ -354,7 +355,10 @@ export function PropostasPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/propostas/${proposta.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/propostas/${proposta.id}`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
@@ -362,7 +366,10 @@ export function PropostasPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleGerarPdf(proposta.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleGerarPdf(proposta.id)
+                              }}
                               className="h-8 w-8 p-0"
                               title="Gerar PDF"
                             >

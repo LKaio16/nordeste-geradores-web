@@ -315,7 +315,8 @@ export function EstoquePage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => navigate(`/estoque/${estoque.id}`)}
                     >
                       <td className="py-3 px-4">
                         <span className="font-medium">{estoque.produto.descricao}</span>
@@ -344,7 +345,10 @@ export function EstoquePage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/estoque/${estoque.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/estoque/${estoque.id}`)
+                            }}
                             className="h-8 w-8"
                             title="Visualizar"
                           >
@@ -353,7 +357,10 @@ export function EstoquePage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/estoque/${estoque.id}/editar`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/estoque/${estoque.id}/editar`)
+                            }}
                             className="h-8 w-8"
                             title="Editar"
                           >
@@ -362,7 +369,10 @@ export function EstoquePage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(estoque.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(estoque.id)
+                            }}
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             title="Excluir"
                           >
