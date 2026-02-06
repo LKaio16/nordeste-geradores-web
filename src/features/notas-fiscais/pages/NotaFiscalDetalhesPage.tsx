@@ -15,6 +15,7 @@ import {
   Printer,
   Download,
   ArrowRight,
+  Edit,
 } from 'lucide-react'
 import {
   Dialog,
@@ -100,7 +101,8 @@ export function NotaFiscalDetalhesPage() {
         clienteId: nota.clienteId,
         dataEmissao: new Date().toISOString().split('T')[0],
         numeroNota: gerarNumeroNotaSaida(new Date().toISOString().split('T')[0]),
-        formaPagamento: nota.formaPagamento,
+        // Notas de saída não têm forma de pagamento
+        formaPagamento: undefined,
         itens: nota.itens.map(item => ({
           produtoId: item.produtoId,
           descricao: item.descricao,
@@ -163,6 +165,13 @@ export function NotaFiscalDetalhesPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => navigate(`/notas-entrada/${nota.id}/editar`)}
+            className="gap-2 bg-nordeste hover:bg-nordeste-dark"
+          >
+            <Edit className="h-4 w-4" />
+            Editar
+          </Button>
           {nota.tipo === 'ENTRADA' && (
             <Button 
               onClick={() => setShowGerarSaidaDialog(true)}
@@ -221,10 +230,12 @@ export function NotaFiscalDetalhesPage() {
                     {formatDate(nota.dataEmissao)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Forma de Pagamento</p>
-                  <p className="font-semibold">{nota.formaPagamento.replace('_', ' ')}</p>
-                </div>
+                {nota.formaPagamento && (
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">Forma de Pagamento</p>
+                    <p className="font-semibold">{nota.formaPagamento.replace('_', ' ')}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

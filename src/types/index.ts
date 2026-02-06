@@ -354,7 +354,7 @@ export interface NotaFiscal {
   dataEmissao: string
   numeroNota: string
   valorTotal: number
-  formaPagamento: FormaPagamento
+  formaPagamento?: FormaPagamento
   itens: NotaFiscalItem[]
   createdAt: string
   updatedAt: string
@@ -424,7 +424,7 @@ export interface NotaFiscalRequest {
   cnpjEmpresa: string
   dataEmissao: string
   numeroNota: string
-  formaPagamento: FormaPagamento
+  formaPagamento?: FormaPagamento
   itens: NotaFiscalItemRequest[]
 }
 

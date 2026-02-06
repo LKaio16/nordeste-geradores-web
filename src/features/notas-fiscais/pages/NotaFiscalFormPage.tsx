@@ -44,7 +44,8 @@ const emptyItem: NotaFiscalItemRequest = {
 export function NotaFiscalFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const isEditing = !!id
+  const location = window.location.pathname
+  const isEditing = !!id && location.includes('/editar')
 
   const [loading, setLoading] = useState(false)
   const [loadingNota, setLoadingNota] = useState(false)
@@ -141,7 +142,8 @@ export function NotaFiscalFormPage() {
         clienteId: notaEntrada.clienteId,
         dataEmissao: new Date().toISOString().split('T')[0],
         numeroNota: gerarNumeroNotaSaida(new Date().toISOString().split('T')[0]),
-        formaPagamento: notaEntrada.formaPagamento,
+        // Notas de saída não têm forma de pagamento
+        formaPagamento: undefined,
         itens: notaEntrada.itens.map(item => ({
           produtoId: item.produtoId,
           descricao: item.descricao,
@@ -284,6 +286,8 @@ export function NotaFiscalFormPage() {
         ...formData,
         cnpjEmpresa: unmaskCPFCNPJ(formData.cnpjEmpresa),
         itens: itensComProdutoId,
+        // Notas de saída não têm forma de pagamento
+        formaPagamento: formData.tipo === TipoNotaFiscal.SAIDA ? undefined : formData.formaPagamento,
       }
       
       // Debug: verificar se produtoId está sendo enviado
@@ -625,6 +629,8 @@ export function NotaFiscalFormPage() {
                         ...prev,
                         tipo: novoTipo,
                         numeroNota: precisaGerarNumero ? gerarNumeroNotaSaida(prev.dataEmissao) : prev.numeroNota,
+                        // Limpar forma de pagamento se mudar para SAIDA
+                        formaPagamento: novoTipo === TipoNotaFiscal.SAIDA ? undefined : (prev.formaPagamento || FormaPagamento.PIX),
                       }
                     })
                   }}
@@ -658,21 +664,24 @@ export function NotaFiscalFormPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="formaPagamento">Forma de Pagamento *</Label>
-                <select
-                  id="formaPagamento"
-                  value={formData.formaPagamento}
-                  onChange={(e) => setFormData({ ...formData, formaPagamento: e.target.value as FormaPagamento })}
-                  className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
-                  required
-                >
-                  <option value={FormaPagamento.PIX}>PIX</option>
-                  <option value={FormaPagamento.CARTAO}>Cartão</option>
-                  <option value={FormaPagamento.BOLETO}>Boleto</option>
-                  <option value={FormaPagamento.TRANSFERENCIA}>Transferência</option>
-                </select>
-              </div>
+              {/* Forma de Pagamento - apenas para notas de ENTRADA */}
+              {formData.tipo === TipoNotaFiscal.ENTRADA && (
+                <div className="space-y-2">
+                  <Label htmlFor="formaPagamento">Forma de Pagamento *</Label>
+                  <select
+                    id="formaPagamento"
+                    value={formData.formaPagamento || FormaPagamento.PIX}
+                    onChange={(e) => setFormData({ ...formData, formaPagamento: e.target.value as FormaPagamento })}
+                    className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
+                    required
+                  >
+                    <option value={FormaPagamento.PIX}>PIX</option>
+                    <option value={FormaPagamento.CARTAO}>Cartão</option>
+                    <option value={FormaPagamento.BOLETO}>Boleto</option>
+                    <option value={FormaPagamento.TRANSFERENCIA}>Transferência</option>
+                  </select>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

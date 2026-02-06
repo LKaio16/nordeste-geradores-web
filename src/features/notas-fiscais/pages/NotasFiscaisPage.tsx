@@ -100,7 +100,7 @@ export function NotasFiscaisPage() {
     // Filtros
     const matchesTipo = !filters.tipo || nota.tipo === filters.tipo
     const matchesFormaPagamento =
-      !filters.formaPagamento || nota.formaPagamento === filters.formaPagamento
+      !filters.formaPagamento || (nota.formaPagamento && nota.formaPagamento === filters.formaPagamento)
     const matchesFornecedor =
       !filters.fornecedorId ||
       (nota.fornecedor &&
@@ -401,7 +401,7 @@ export function NotasFiscaisPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-sm">{nota.formaPagamento.replace('_', ' ')}</span>
+                        <span className="text-sm">{nota.formaPagamento ? nota.formaPagamento.replace('_', ' ') : '-'}</span>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <span className="text-sm">{nota.itens.length}</span>
@@ -520,7 +520,11 @@ export function NotasFiscaisPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <div className="text-sm text-slate-600">
-                        <strong>Forma de Pagamento:</strong> {nota.formaPagamento.replace('_', ' ')}
+                        {nota.formaPagamento && (
+                          <>
+                            <strong>Forma de Pagamento:</strong> {nota.formaPagamento.replace('_', ' ')}
+                          </>
+                        )}
                       </div>
                       <div className="text-sm text-slate-600">
                         <strong>Itens:</strong> {nota.itens.length}
