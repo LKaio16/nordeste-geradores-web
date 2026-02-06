@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { NotaFiscal, NotaFiscalRequest, NotaFiscalItemRequest, TipoNotaFiscal, FormaPagamento, Fornecedor, Produto, ProdutoRequest } from '@/types'
+import { NotaFiscal, NotaFiscalRequest, NotaFiscalItemRequest, TipoNotaFiscal, FormaPagamento, Fornecedor, Cliente, ClienteRequest, FornecedorRequest, Produto, ProdutoRequest, StatusCliente, StatusFornecedor } from '@/types'
 import { notaFiscalService } from '@/services/notaFiscalService'
 import { fornecedorService } from '@/services/fornecedorService'
+import { clienteService } from '@/services/clienteService'
 import { produtoService } from '@/services/produtoService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,11 +49,44 @@ export function NotaFiscalFormPage() {
   const [loading, setLoading] = useState(false)
   const [loadingNota, setLoadingNota] = useState(false)
   const [error, setError] = useState('')
+  const [showGerarSaidaDialog, setShowGerarSaidaDialog] = useState(false)
+  const [notaCriadaId, setNotaCriadaId] = useState<string | null>(null)
+  const [gerandoSaida, setGerandoSaida] = useState(false)
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [loadingFornecedores, setLoadingFornecedores] = useState(true)
+  const [loadingClientes, setLoadingClientes] = useState(true)
   const [selectedFornecedorId, setSelectedFornecedorId] = useState<string>('')
+  const [selectedClienteId, setSelectedClienteId] = useState<string>('')
+  const [tipoSelecao, setTipoSelecao] = useState<'FORNECEDOR' | 'CLIENTE'>('FORNECEDOR')
   const [fornecedorSearchTerm, setFornecedorSearchTerm] = useState('')
+  const [clienteSearchTerm, setClienteSearchTerm] = useState('')
   const [showFornecedorDropdown, setShowFornecedorDropdown] = useState(false)
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false)
+  const [showCriarFornecedorModal, setShowCriarFornecedorModal] = useState(false)
+  const [showCriarClienteModal, setShowCriarClienteModal] = useState(false)
+  const [novoFornecedor, setNovoFornecedor] = useState<FornecedorRequest>({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    endereco: '',
+    cidade: '',
+    estado: 'CE',
+    status: StatusFornecedor.ATIVO,
+  })
+  const [novoCliente, setNovoCliente] = useState<ClienteRequest>({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    endereco: '',
+    cidade: '',
+    estado: 'CE',
+    status: StatusCliente.ATIVO,
+  })
+  const [loadingCriarFornecedor, setLoadingCriarFornecedor] = useState(false)
+  const [loadingCriarCliente, setLoadingCriarCliente] = useState(false)
 
   // Estados para produtos
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -89,8 +123,54 @@ export function NotaFiscalFormPage() {
     return numero.length > 50 ? numero.slice(0, 50) : numero
   }
 
+  const handleGerarNotaSaida = async () => {
+    if (!notaCriadaId || !formData) return
+
+    try {
+      setGerandoSaida(true)
+      
+      // Buscar a nota criada para pegar os itens
+      const notaEntrada = await notaFiscalService.buscarPorId(notaCriadaId)
+      
+      // Criar nota de saída baseada na entrada
+      const notaSaida = {
+        tipo: TipoNotaFiscal.SAIDA,
+        fornecedor: notaEntrada.fornecedor,
+        cnpjEmpresa: notaEntrada.cnpjEmpresa,
+        fornecedorId: notaEntrada.fornecedorId,
+        clienteId: notaEntrada.clienteId,
+        dataEmissao: new Date().toISOString().split('T')[0],
+        numeroNota: gerarNumeroNotaSaida(new Date().toISOString().split('T')[0]),
+        formaPagamento: notaEntrada.formaPagamento,
+        itens: notaEntrada.itens.map(item => ({
+          produtoId: item.produtoId,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          valorUnitario: item.valorUnitario,
+          desconto: item.desconto || 0,
+        })),
+      }
+
+      const notaSaidaCriada = await notaFiscalService.criar(notaSaida)
+      setShowGerarSaidaDialog(false)
+      navigate(`/notas-entrada/${notaSaidaCriada.id}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao gerar nota de saída')
+      setShowGerarSaidaDialog(false)
+      navigate('/notas-entrada')
+    } finally {
+      setGerandoSaida(false)
+    }
+  }
+
+  const handleCancelarGerarSaida = () => {
+    setShowGerarSaidaDialog(false)
+    navigate('/notas-entrada')
+  }
+
   useEffect(() => {
     carregarFornecedores()
+    carregarClientes()
     carregarProdutos()
     if (id) {
       carregarNota(id)
@@ -106,6 +186,18 @@ export function NotaFiscalFormPage() {
       console.error('Erro ao carregar fornecedores:', err)
     } finally {
       setLoadingFornecedores(false)
+    }
+  }
+
+  const carregarClientes = async () => {
+    try {
+      setLoadingClientes(true)
+      const data = await clienteService.listar()
+      setClientes(data.filter(c => c.status === 'ATIVO'))
+    } catch (err: any) {
+      console.error('Erro ao carregar clientes:', err)
+    } finally {
+      setLoadingClientes(false)
     }
   }
 
@@ -160,6 +252,12 @@ export function NotaFiscalFormPage() {
     e.preventDefault()
     setError('')
 
+    // Validação: para notas de entrada, deve ter fornecedor OU cliente selecionado
+    if (formData.tipo === TipoNotaFiscal.ENTRADA && !selectedFornecedorId && !selectedClienteId) {
+      setError('Por favor, selecione um fornecedor ou cliente cadastrado para a nota de entrada')
+      return
+    }
+
     if (formData.itens.length === 0) {
       setError('Adicione pelo menos um item à nota fiscal')
       return
@@ -201,10 +299,18 @@ export function NotaFiscalFormPage() {
 
       if (isEditing && id) {
         await notaFiscalService.atualizar(id, dataToSubmit)
+        navigate('/notas-entrada')
       } else {
-        await notaFiscalService.criar(dataToSubmit)
+        const notaCriada = await notaFiscalService.criar(dataToSubmit)
+        
+        // Se for nota de entrada, perguntar se quer gerar nota de saída
+        if (dataToSubmit.tipo === 'ENTRADA') {
+          setNotaCriadaId(notaCriada.id)
+          setShowGerarSaidaDialog(true)
+        } else {
+          navigate('/notas-entrada')
+        }
       }
-      navigate('/notas-entrada')
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar nota fiscal')
     } finally {
@@ -332,20 +438,125 @@ export function NotaFiscalFormPage() {
 
   const handleSelectFornecedor = (fornecedor: Fornecedor) => {
     setSelectedFornecedorId(fornecedor.id)
+    setSelectedClienteId('')
     setFormData({
       ...formData,
       fornecedor: fornecedor.nome,
       cnpjEmpresa: maskCNPJ(fornecedor.cnpj),
       fornecedorId: fornecedor.id,
+      clienteId: undefined,
     })
-    setFornecedorSearchTerm('')
+    setFornecedorSearchTerm(fornecedor.nome) // Preencher com o nome para mostrar que está selecionado
     setShowFornecedorDropdown(false)
+    setError('') // Limpar erros ao selecionar
+  }
+
+  const handleSelectCliente = (cliente: Cliente) => {
+    setSelectedClienteId(cliente.id)
+    setSelectedFornecedorId('')
+    setFormData({
+      ...formData,
+      fornecedor: cliente.nome,
+      cnpjEmpresa: maskCNPJ(cliente.cnpj),
+      clienteId: cliente.id,
+      fornecedorId: undefined,
+    })
+    setClienteSearchTerm(cliente.nome) // Preencher com o nome para mostrar que está selecionado
+    setShowClienteDropdown(false)
+    setError('') // Limpar erros ao selecionar
   }
 
   const filteredFornecedores = fornecedores.filter(f =>
     f.nome.toLowerCase().includes(fornecedorSearchTerm.toLowerCase()) ||
     f.cnpj.includes(fornecedorSearchTerm)
   )
+
+  const filteredClientes = clientes.filter(c =>
+    c.nome.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+    c.cnpj.includes(clienteSearchTerm)
+  )
+
+  const handleCriarFornecedor = async () => {
+    if (!novoFornecedor.nome || !novoFornecedor.cnpj || !novoFornecedor.endereco || !novoFornecedor.cidade) {
+      setError('Preencha todos os campos obrigatórios do fornecedor')
+      return
+    }
+
+    try {
+      setLoadingCriarFornecedor(true)
+      setError('') // Limpar erros anteriores
+      const fornecedorCriado = await fornecedorService.criar({
+        ...novoFornecedor,
+        cnpj: unmaskCPFCNPJ(novoFornecedor.cnpj),
+      })
+      
+      // Atualizar lista e selecionar
+      await carregarFornecedores()
+      
+      // Garantir que o tipo de seleção está correto
+      setTipoSelecao('FORNECEDOR')
+      
+      // Selecionar o fornecedor criado
+      handleSelectFornecedor(fornecedorCriado)
+      
+      setShowCriarFornecedorModal(false)
+      setNovoFornecedor({
+        nome: '',
+        cnpj: '',
+        email: '',
+        telefone: '',
+        endereco: '',
+        cidade: '',
+        estado: 'CE',
+        status: StatusFornecedor.ATIVO,
+      })
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar fornecedor')
+    } finally {
+      setLoadingCriarFornecedor(false)
+    }
+  }
+
+  const handleCriarCliente = async () => {
+    if (!novoCliente.nome || !novoCliente.cnpj || !novoCliente.endereco || !novoCliente.cidade) {
+      setError('Preencha todos os campos obrigatórios do cliente')
+      return
+    }
+
+    try {
+      setLoadingCriarCliente(true)
+      setError('') // Limpar erros anteriores
+      const clienteCriado = await clienteService.criar({
+        ...novoCliente,
+        cnpj: unmaskCPFCNPJ(novoCliente.cnpj),
+      })
+      
+      // Atualizar lista e selecionar
+      await carregarClientes()
+      
+      // Garantir que o tipo de seleção está correto
+      setTipoSelecao('CLIENTE')
+      
+      // Selecionar o cliente criado
+      handleSelectCliente(clienteCriado)
+      
+      setShowCriarClienteModal(false)
+      setNovoCliente({
+        nome: '',
+        cnpj: '',
+        email: '',
+        telefone: '',
+        endereco: '',
+        cidade: '',
+        estado: 'CE',
+        status: StatusCliente.ATIVO,
+      })
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar cliente')
+    } finally {
+      setLoadingCriarCliente(false)
+    }
+  }
 
   if (loadingNota) {
     return (
@@ -466,97 +677,349 @@ export function NotaFiscalFormPage() {
           </CardContent>
         </Card>
 
-        {/* Fornecedor */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Fornecedor
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Seletor de Fornecedor */}
-            <div className="space-y-2">
-              <Label>Selecionar Fornecedor Cadastrado</Label>
-              <div className="relative">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Buscar fornecedor por nome ou CNPJ..."
-                    value={fornecedorSearchTerm}
-                    onChange={(e) => {
-                      setFornecedorSearchTerm(e.target.value)
-                      setShowFornecedorDropdown(true)
+        {/* Fornecedor/Cliente - Apenas para notas de ENTRADA */}
+        {formData.tipo === TipoNotaFiscal.ENTRADA && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Fornecedor ou Cliente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Seletor de Tipo */}
+              <div className="space-y-2">
+                <Label>Tipo *</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={tipoSelecao === 'FORNECEDOR' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setTipoSelecao('FORNECEDOR')
+                      setSelectedClienteId('')
+                      setClienteSearchTerm('')
+                      setFormData({ ...formData, clienteId: undefined })
                     }}
-                    onFocus={() => setShowFornecedorDropdown(true)}
-                    className="pl-10"
-                  />
+                    className="flex-1"
+                  >
+                    Fornecedor
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={tipoSelecao === 'CLIENTE' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setTipoSelecao('CLIENTE')
+                      setSelectedFornecedorId('')
+                      setFornecedorSearchTerm('')
+                      setFormData({ ...formData, fornecedorId: undefined })
+                    }}
+                    className="flex-1"
+                  >
+                    Cliente
+                  </Button>
                 </div>
-                {showFornecedorDropdown && fornecedorSearchTerm && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                    {loadingFornecedores ? (
-                      <div className="p-3 text-center text-slate-500">Carregando...</div>
-                    ) : filteredFornecedores.length === 0 ? (
-                      <div className="p-3 text-center text-slate-500">Nenhum fornecedor encontrado</div>
-                    ) : (
-                      filteredFornecedores.map((fornecedor) => (
-                        <button
-                          key={fornecedor.id}
-                          type="button"
-                          onClick={() => handleSelectFornecedor(fornecedor)}
-                          className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
-                        >
-                          <div>
-                            <div className="font-medium">{fornecedor.nome}</div>
-                            <div className="text-sm text-slate-500">{fornecedor.cnpj}</div>
+              </div>
+
+              {/* Seletor de Fornecedor */}
+              {tipoSelecao === 'FORNECEDOR' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Selecionar Fornecedor Cadastrado *</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCriarFornecedorModal(true)}
+                      className="gap-1 text-xs"
+                    >
+                      <PlusCircle className="h-3 w-3" />
+                      Novo Fornecedor
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder={selectedFornecedorId ? "Fornecedor selecionado" : "Buscar fornecedor por nome ou CNPJ..."}
+                        value={fornecedorSearchTerm}
+                        onChange={(e) => {
+                          setFornecedorSearchTerm(e.target.value)
+                          setShowFornecedorDropdown(true)
+                        }}
+                        onFocus={() => {
+                          if (!selectedFornecedorId) {
+                            setShowFornecedorDropdown(true)
+                          }
+                        }}
+                        className="pl-10"
+                        readOnly={!!selectedFornecedorId}
+                      />
+                    </div>
+                    {showFornecedorDropdown && fornecedorSearchTerm && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {loadingFornecedores ? (
+                          <div className="p-3 text-center text-slate-500">Carregando...</div>
+                        ) : filteredFornecedores.length === 0 ? (
+                          <div className="p-3 text-center text-slate-500">
+                            <p className="mb-2">Nenhum fornecedor encontrado</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowCriarFornecedorModal(true)}
+                              className="gap-1"
+                            >
+                              <PlusCircle className="h-3 w-3" />
+                              Cadastrar Fornecedor
+                            </Button>
                           </div>
-                          {selectedFornecedorId === fornecedor.id && (
-                            <span className="text-blue-600 text-sm">Selecionado</span>
-                          )}
-                        </button>
-                      ))
+                        ) : (
+                          filteredFornecedores.map((fornecedor) => (
+                            <button
+                              key={fornecedor.id}
+                              type="button"
+                              onClick={() => handleSelectFornecedor(fornecedor)}
+                              className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
+                            >
+                              <div>
+                                <div className="font-medium">{fornecedor.nome}</div>
+                                <div className="text-sm text-slate-500">{fornecedor.cnpj}</div>
+                              </div>
+                              {selectedFornecedorId === fornecedor.id && (
+                                <span className="text-blue-600 text-sm">Selecionado</span>
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
 
-            {/* Dados do Fornecedor */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fornecedor">Nome do Fornecedor *</Label>
-                <Input
-                  id="fornecedor"
-                  value={formData.fornecedor}
-                  onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
-                  placeholder="Nome do fornecedor"
-                  required
-                />
-              </div>
+              {/* Seletor de Cliente */}
+              {tipoSelecao === 'CLIENTE' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Selecionar Cliente Cadastrado *</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCriarClienteModal(true)}
+                      className="gap-1 text-xs"
+                    >
+                      <PlusCircle className="h-3 w-3" />
+                      Novo Cliente
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder={selectedClienteId ? "Cliente selecionado" : "Buscar cliente por nome ou CNPJ..."}
+                        value={clienteSearchTerm}
+                        onChange={(e) => {
+                          setClienteSearchTerm(e.target.value)
+                          setShowClienteDropdown(true)
+                        }}
+                        onFocus={() => {
+                          if (!selectedClienteId) {
+                            setShowClienteDropdown(true)
+                          }
+                        }}
+                        className="pl-10"
+                        readOnly={!!selectedClienteId}
+                      />
+                    </div>
+                    {showClienteDropdown && clienteSearchTerm && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {loadingClientes ? (
+                          <div className="p-3 text-center text-slate-500">Carregando...</div>
+                        ) : filteredClientes.length === 0 ? (
+                          <div className="p-3 text-center text-slate-500">
+                            <p className="mb-2">Nenhum cliente encontrado</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowCriarClienteModal(true)}
+                              className="gap-1"
+                            >
+                              <PlusCircle className="h-3 w-3" />
+                              Cadastrar Cliente
+                            </Button>
+                          </div>
+                        ) : (
+                          filteredClientes.map((cliente) => (
+                            <button
+                              key={cliente.id}
+                              type="button"
+                              onClick={() => handleSelectCliente(cliente)}
+                              className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
+                            >
+                              <div>
+                                <div className="font-medium">{cliente.nome}</div>
+                                <div className="text-sm text-slate-500">{cliente.cnpj}</div>
+                              </div>
+                              {selectedClienteId === cliente.id && (
+                                <span className="text-blue-600 text-sm">Selecionado</span>
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="cnpjEmpresa">CNPJ *</Label>
-                <Input
-                  id="cnpjEmpresa"
-                  value={formData.cnpjEmpresa}
-                  onChange={(e) => {
-                    const masked = maskCNPJ(e.target.value)
-                    setFormData({ ...formData, cnpjEmpresa: masked })
+              {/* Dados Selecionados (somente leitura) */}
+              {(selectedFornecedorId || selectedClienteId) && (
+                <div className="p-3 bg-blue-50 rounded-lg space-y-2">
+                  <div className="text-sm font-semibold text-blue-900">
+                    {selectedFornecedorId ? 'Fornecedor' : 'Cliente'} Selecionado:
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    <div><strong>Nome:</strong> {formData.fornecedor}</div>
+                    <div><strong>CNPJ:</strong> {formData.cnpjEmpresa}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botão para limpar seleção */}
+              {(selectedFornecedorId || selectedClienteId) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedFornecedorId) {
+                      setSelectedFornecedorId('')
+                      setFornecedorSearchTerm('')
+                    }
+                    if (selectedClienteId) {
+                      setSelectedClienteId('')
+                      setClienteSearchTerm('')
+                    }
+                    setFormData({
+                      ...formData,
+                      fornecedor: '',
+                      cnpjEmpresa: '',
+                      fornecedorId: undefined,
+                      clienteId: undefined,
+                    })
                   }}
-                  placeholder="00.000.000/0000-00"
-                  required
-                  maxLength={18}
-                />
-              </div>
-            </div>
+                  className="gap-1 text-xs"
+                >
+                  <X className="h-3 w-3" />
+                  Limpar Seleção
+                </Button>
+              )}
 
-            {selectedFornecedorId && (
-              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                Fornecedor selecionado da base de dados. Os dados serão vinculados automaticamente.
+              {/* Validação: obrigatório selecionar */}
+              {!selectedFornecedorId && !selectedClienteId && formData.tipo === TipoNotaFiscal.ENTRADA && (
+                <div className="p-3 bg-yellow-50 rounded-lg text-sm text-yellow-700">
+                  Por favor, selecione um {tipoSelecao === 'FORNECEDOR' ? 'fornecedor' : 'cliente'} cadastrado ou crie um novo.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fornecedor - Para notas de SAÍDA (mantém comportamento original) */}
+        {formData.tipo === TipoNotaFiscal.SAIDA && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Fornecedor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Seletor de Fornecedor */}
+              <div className="space-y-2">
+                <Label>Selecionar Fornecedor Cadastrado</Label>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Buscar fornecedor por nome ou CNPJ..."
+                      value={fornecedorSearchTerm}
+                      onChange={(e) => {
+                        setFornecedorSearchTerm(e.target.value)
+                        setShowFornecedorDropdown(true)
+                      }}
+                      onFocus={() => setShowFornecedorDropdown(true)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {showFornecedorDropdown && fornecedorSearchTerm && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {loadingFornecedores ? (
+                        <div className="p-3 text-center text-slate-500">Carregando...</div>
+                      ) : filteredFornecedores.length === 0 ? (
+                        <div className="p-3 text-center text-slate-500">Nenhum fornecedor encontrado</div>
+                      ) : (
+                        filteredFornecedores.map((fornecedor) => (
+                          <button
+                            key={fornecedor.id}
+                            type="button"
+                            onClick={() => handleSelectFornecedor(fornecedor)}
+                            className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
+                          >
+                            <div>
+                              <div className="font-medium">{fornecedor.nome}</div>
+                              <div className="text-sm text-slate-500">{fornecedor.cnpj}</div>
+                            </div>
+                            {selectedFornecedorId === fornecedor.id && (
+                              <span className="text-blue-600 text-sm">Selecionado</span>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {/* Dados do Fornecedor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fornecedor">Nome do Fornecedor *</Label>
+                  <Input
+                    id="fornecedor"
+                    value={formData.fornecedor}
+                    onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
+                    placeholder="Nome do fornecedor"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cnpjEmpresa">CNPJ *</Label>
+                  <Input
+                    id="cnpjEmpresa"
+                    value={formData.cnpjEmpresa}
+                    onChange={(e) => {
+                      const masked = maskCNPJ(e.target.value)
+                      setFormData({ ...formData, cnpjEmpresa: masked })
+                    }}
+                    placeholder="00.000.000/0000-00"
+                    required
+                    maxLength={18}
+                  />
+                </div>
+              </div>
+
+              {selectedFornecedorId && (
+                <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                  Fornecedor selecionado da base de dados. Os dados serão vinculados automaticamente.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Itens */}
         <Card>
@@ -914,6 +1377,307 @@ export function NotaFiscalFormPage() {
               className="gap-2"
             >
               {loadingProduto ? 'Salvando...' : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Cadastrar
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para gerar nota de saída após criar entrada */}
+      <Dialog open={showGerarSaidaDialog} onOpenChange={setShowGerarSaidaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nota de Entrada Criada!</DialogTitle>
+            <DialogDescription>
+              Deseja gerar uma nota de saída baseada nesta nota de entrada? 
+              Os itens e valores serão copiados automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={handleCancelarGerarSaida}
+              disabled={gerandoSaida}
+            >
+              Não, apenas salvar
+            </Button>
+            <Button
+              onClick={handleGerarNotaSaida}
+              disabled={gerandoSaida}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {gerandoSaida ? 'Gerando...' : 'Sim, gerar nota de saída'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cadastro Rápido de Fornecedor */}
+      <Dialog open={showCriarFornecedorModal} onOpenChange={setShowCriarFornecedorModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Cadastrar Novo Fornecedor
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados básicos do fornecedor para cadastrá-lo rapidamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="fornecedorNome">Nome / Razão Social *</Label>
+              <Input
+                id="fornecedorNome"
+                value={novoFornecedor.nome}
+                onChange={(e) => setNovoFornecedor({ ...novoFornecedor, nome: e.target.value })}
+                placeholder="Nome completo ou razão social"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fornecedorCnpj">CNPJ *</Label>
+              <Input
+                id="fornecedorCnpj"
+                value={novoFornecedor.cnpj}
+                onChange={(e) => {
+                  const masked = maskCNPJ(e.target.value)
+                  setNovoFornecedor({ ...novoFornecedor, cnpj: masked })
+                }}
+                placeholder="00.000.000/0000-00"
+                required
+                maxLength={18}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fornecedorEmail">Email</Label>
+                <Input
+                  id="fornecedorEmail"
+                  type="email"
+                  value={novoFornecedor.email}
+                  onChange={(e) => setNovoFornecedor({ ...novoFornecedor, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fornecedorTelefone">Telefone</Label>
+                <Input
+                  id="fornecedorTelefone"
+                  value={novoFornecedor.telefone}
+                  onChange={(e) => setNovoFornecedor({ ...novoFornecedor, telefone: e.target.value })}
+                  placeholder="(85) 99999-9999"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fornecedorEndereco">Endereço *</Label>
+              <Input
+                id="fornecedorEndereco"
+                value={novoFornecedor.endereco}
+                onChange={(e) => setNovoFornecedor({ ...novoFornecedor, endereco: e.target.value })}
+                placeholder="Rua, número, bairro"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fornecedorCidade">Cidade *</Label>
+                <Input
+                  id="fornecedorCidade"
+                  value={novoFornecedor.cidade}
+                  onChange={(e) => setNovoFornecedor({ ...novoFornecedor, cidade: e.target.value })}
+                  placeholder="Fortaleza"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fornecedorEstado">Estado *</Label>
+                <Input
+                  id="fornecedorEstado"
+                  value={novoFornecedor.estado}
+                  onChange={(e) => setNovoFornecedor({ ...novoFornecedor, estado: e.target.value.toUpperCase().slice(0, 2) })}
+                  placeholder="CE"
+                  required
+                  maxLength={2}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowCriarFornecedorModal(false)
+                setNovoFornecedor({
+                  nome: '',
+                  cnpj: '',
+                  email: '',
+                  telefone: '',
+                  endereco: '',
+                  cidade: '',
+                  estado: 'CE',
+                  status: StatusFornecedor.ATIVO,
+                })
+              }}
+              disabled={loadingCriarFornecedor}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCriarFornecedor}
+              disabled={loadingCriarFornecedor}
+              className="gap-2"
+            >
+              {loadingCriarFornecedor ? 'Salvando...' : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Cadastrar
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cadastro Rápido de Cliente */}
+      <Dialog open={showCriarClienteModal} onOpenChange={setShowCriarClienteModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Cadastrar Novo Cliente
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados básicos do cliente para cadastrá-lo rapidamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="clienteNome">Nome / Razão Social *</Label>
+              <Input
+                id="clienteNome"
+                value={novoCliente.nome}
+                onChange={(e) => setNovoCliente({ ...novoCliente, nome: e.target.value })}
+                placeholder="Nome completo ou razão social"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clienteCnpj">CNPJ *</Label>
+              <Input
+                id="clienteCnpj"
+                value={novoCliente.cnpj}
+                onChange={(e) => {
+                  const masked = maskCNPJ(e.target.value)
+                  setNovoCliente({ ...novoCliente, cnpj: masked })
+                }}
+                placeholder="00.000.000/0000-00"
+                required
+                maxLength={18}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clienteEmail">Email</Label>
+                <Input
+                  id="clienteEmail"
+                  type="email"
+                  value={novoCliente.email}
+                  onChange={(e) => setNovoCliente({ ...novoCliente, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clienteTelefone">Telefone</Label>
+                <Input
+                  id="clienteTelefone"
+                  value={novoCliente.telefone}
+                  onChange={(e) => setNovoCliente({ ...novoCliente, telefone: e.target.value })}
+                  placeholder="(85) 99999-9999"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clienteEndereco">Endereço *</Label>
+              <Input
+                id="clienteEndereco"
+                value={novoCliente.endereco}
+                onChange={(e) => setNovoCliente({ ...novoCliente, endereco: e.target.value })}
+                placeholder="Rua, número, bairro"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clienteCidade">Cidade *</Label>
+                <Input
+                  id="clienteCidade"
+                  value={novoCliente.cidade}
+                  onChange={(e) => setNovoCliente({ ...novoCliente, cidade: e.target.value })}
+                  placeholder="Fortaleza"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clienteEstado">Estado *</Label>
+                <Input
+                  id="clienteEstado"
+                  value={novoCliente.estado}
+                  onChange={(e) => setNovoCliente({ ...novoCliente, estado: e.target.value.toUpperCase().slice(0, 2) })}
+                  placeholder="CE"
+                  required
+                  maxLength={2}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowCriarClienteModal(false)
+                setNovoCliente({
+                  nome: '',
+                  cnpj: '',
+                  email: '',
+                  telefone: '',
+                  endereco: '',
+                  cidade: '',
+                  estado: 'CE',
+                  status: StatusCliente.ATIVO,
+                })
+              }}
+              disabled={loadingCriarCliente}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCriarCliente}
+              disabled={loadingCriarCliente}
+              className="gap-2"
+            >
+              {loadingCriarCliente ? 'Salvando...' : (
                 <>
                   <Save className="h-4 w-4" />
                   Cadastrar

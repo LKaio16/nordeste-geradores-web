@@ -8,6 +8,8 @@ function formatNotaFiscalFromResponse(nota: any): NotaFiscal {
     tipo: nota.tipo,
     fornecedor: nota.fornecedor,
     cnpjEmpresa: nota.cnpjEmpresa,
+    fornecedorId: nota.fornecedorId ? String(nota.fornecedorId) : undefined,
+    clienteId: nota.clienteId ? String(nota.clienteId) : undefined,
     dataEmissao: nota.dataEmissao ? (typeof nota.dataEmissao === 'string' ? nota.dataEmissao : nota.dataEmissao.split('T')[0]) : '',
     numeroNota: nota.numeroNota,
     valorTotal: typeof nota.valorTotal === 'number' ? nota.valorTotal : parseFloat(nota.valorTotal) || 0,

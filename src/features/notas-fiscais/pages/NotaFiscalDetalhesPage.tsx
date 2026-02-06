@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { NotaFiscal } from '@/types'
+import { NotaFiscal, TipoNotaFiscal } from '@/types'
 import { notaFiscalService } from '@/services/notaFiscalService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,15 @@ import {
   Building2,
   Printer,
   Download,
+  ArrowRight,
 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { motion } from 'framer-motion'
 
 export function NotaFiscalDetalhesPage() {
@@ -23,6 +31,8 @@ export function NotaFiscalDetalhesPage() {
   const [nota, setNota] = useState<NotaFiscal | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showGerarSaidaDialog, setShowGerarSaidaDialog] = useState(false)
+  const [gerandoSaida, setGerandoSaida] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -58,7 +68,57 @@ export function NotaFiscalDetalhesPage() {
   }
 
   const formatCNPJ = (cnpj: string) => {
-    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+    const cleaned = cnpj.replace(/\D/g, '')
+    if (cleaned.length === 11) {
+      // CPF: 000.000.000-00
+      return cleaned.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+    } else if (cleaned.length === 14) {
+      // CNPJ: 00.000.000/0000-00
+      return cleaned.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+    }
+    return cnpj
+  }
+
+  const gerarNumeroNotaSaida = (dataEmissaoIso: string) => {
+    const datePart = (dataEmissaoIso || new Date().toISOString().split('T')[0]).replaceAll('-', '')
+    const numero = `SAI-${datePart}-${Date.now()}`
+    return numero.length > 50 ? numero.slice(0, 50) : numero
+  }
+
+  const handleGerarNotaSaida = async () => {
+    if (!nota) return
+
+    try {
+      setGerandoSaida(true)
+      
+      // Criar nota de saída baseada na entrada
+      const notaSaida = {
+        tipo: TipoNotaFiscal.SAIDA,
+        fornecedor: nota.fornecedor,
+        cnpjEmpresa: nota.cnpjEmpresa,
+        fornecedorId: nota.fornecedorId,
+        clienteId: nota.clienteId,
+        dataEmissao: new Date().toISOString().split('T')[0],
+        numeroNota: gerarNumeroNotaSaida(new Date().toISOString().split('T')[0]),
+        formaPagamento: nota.formaPagamento,
+        itens: nota.itens.map(item => ({
+          produtoId: item.produtoId,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          valorUnitario: item.valorUnitario,
+          desconto: item.desconto || 0,
+        })),
+      }
+
+      const notaCriada = await notaFiscalService.criar(notaSaida)
+      setShowGerarSaidaDialog(false)
+      navigate(`/notas-entrada/${notaCriada.id}`)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao gerar nota de saída')
+      setShowGerarSaidaDialog(false)
+    } finally {
+      setGerandoSaida(false)
+    }
   }
 
   if (loading) {
@@ -103,6 +163,15 @@ export function NotaFiscalDetalhesPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          {nota.tipo === 'ENTRADA' && (
+            <Button 
+              onClick={() => setShowGerarSaidaDialog(true)}
+              className="gap-2 bg-purple-600 hover:bg-purple-700"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Gerar Nota de Saída
+            </Button>
+          )}
           <Button variant="outline" className="gap-2">
             <Printer className="h-4 w-4" />
             Imprimir
@@ -160,12 +229,12 @@ export function NotaFiscalDetalhesPage() {
             </CardContent>
           </Card>
 
-          {/* Fornecedor */}
+          {/* Fornecedor ou Cliente */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Fornecedor
+                {nota.clienteId ? 'Cliente' : 'Fornecedor'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -175,9 +244,21 @@ export function NotaFiscalDetalhesPage() {
                   <p className="font-semibold">{nota.fornecedor}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 mb-1">CNPJ</p>
+                  <p className="text-sm text-slate-500 mb-1">
+                    {nota.cnpjEmpresa.replace(/\D/g, '').length === 11 ? 'CPF' : 'CNPJ'}
+                  </p>
                   <p className="font-semibold">{formatCNPJ(nota.cnpjEmpresa)}</p>
                 </div>
+                {nota.clienteId && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-500">Vinculado ao cadastro de cliente</p>
+                  </div>
+                )}
+                {nota.fornecedorId && !nota.clienteId && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-500">Vinculado ao cadastro de fornecedor</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -289,6 +370,35 @@ export function NotaFiscalDetalhesPage() {
           </Card>
         </div>
       </div>
+
+      {/* Dialog para confirmar geração de nota de saída */}
+      <Dialog open={showGerarSaidaDialog} onOpenChange={setShowGerarSaidaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerar Nota de Saída</DialogTitle>
+            <DialogDescription>
+              Deseja gerar uma nota de saída baseada nesta nota de entrada? 
+              Os itens e valores serão copiados automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowGerarSaidaDialog(false)}
+              disabled={gerandoSaida}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleGerarNotaSaida}
+              disabled={gerandoSaida}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {gerandoSaida ? 'Gerando...' : 'Gerar Nota de Saída'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
