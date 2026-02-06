@@ -451,7 +451,10 @@ export function NotasFiscaisPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/notas-entrada/${nota.id}/editar`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/notas-entrada/${nota.id}/editar`)
+                            }}
                             className="h-8 w-8"
                             title="Editar"
                           >
@@ -460,7 +463,10 @@ export function NotasFiscaisPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(nota.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(nota.id)
+                            }}
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             title="Excluir"
                           >

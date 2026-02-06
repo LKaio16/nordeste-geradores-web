@@ -323,7 +323,10 @@ export function GeradoresPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDelete(gerador.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(gerador.id)
+                              }}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />

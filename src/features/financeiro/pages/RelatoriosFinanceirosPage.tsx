@@ -116,7 +116,7 @@ export function RelatoriosFinanceirosPage() {
     return `${value.toFixed(2)}%`
   }
 
-  const renderCell = (value: number, isExpense = false) => {
+  const renderCell = (value: number, isExpense = false, key?: string) => {
     const formatted = formatCurrency(Math.abs(value))
     const isZero = value === 0
     
@@ -133,7 +133,7 @@ export function RelatoriosFinanceirosPage() {
     }
     
     return (
-      <td className="px-3 py-2 text-right text-sm whitespace-nowrap">
+      <td key={key} className="px-3 py-2 text-right text-sm whitespace-nowrap">
         {!isZero ? (
           <span className={colorClass}>
             {formatted}
@@ -145,13 +145,13 @@ export function RelatoriosFinanceirosPage() {
     )
   }
 
-  const renderCellResultado = (value: number) => {
+  const renderCellResultado = (value: number, key?: string) => {
     const formatted = formatCurrency(Math.abs(value))
     const isZero = value === 0
     const isPositive = value >= 0
     
     return (
-      <td className="px-3 py-2 text-right text-sm whitespace-nowrap">
+      <td key={key} className="px-3 py-2 text-right text-sm whitespace-nowrap">
         {!isZero ? (
           <span className={isPositive ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
             {value < 0 ? '-' : ''}{formatted}
@@ -605,8 +605,8 @@ export function RelatoriosFinanceirosPage() {
                           </Button>
                         </div>
                       </td>
-                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoOperacional))}
-                      {renderCellResultado(relatorio.totais.caixaLiquidoOperacional)}
+                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoOperacional, `operacional-${mes.mesAno}`))}
+                      {renderCellResultado(relatorio.totais.caixaLiquidoOperacional, 'operacional-total')}
                     </tr>
                     <tr className="hover:bg-purple-50/50">
                       <td className="px-4 py-3 font-medium text-slate-900">
@@ -632,8 +632,8 @@ export function RelatoriosFinanceirosPage() {
                           </Button>
                         </div>
                       </td>
-                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoInvestimento))}
-                      {renderCellResultado(relatorio.totais.caixaLiquidoInvestimento)}
+                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoInvestimento, `investimento-${mes.mesAno}`))}
+                      {renderCellResultado(relatorio.totais.caixaLiquidoInvestimento, 'investimento-total')}
                     </tr>
                     <tr className="hover:bg-orange-50/50">
                       <td className="px-4 py-3 font-medium text-slate-900">
@@ -659,13 +659,13 @@ export function RelatoriosFinanceirosPage() {
                           </Button>
                         </div>
                       </td>
-                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoFinanciamento))}
-                      {renderCellResultado(relatorio.totais.caixaLiquidoFinanciamento)}
+                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoFinanciamento, `financiamento-${mes.mesAno}`))}
+                      {renderCellResultado(relatorio.totais.caixaLiquidoFinanciamento, 'financiamento-total')}
                     </tr>
                     <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
                       <td className="px-4 py-3 font-bold text-slate-900">Resultado Final</td>
-                      {relatorio.meses.map((mes) => renderCellResultado(mes.resultadoCaixaPeriodo))}
-                      {renderCellResultado(relatorio.totais.resultadoCaixaPeriodo)}
+                      {relatorio.meses.map((mes) => renderCellResultado(mes.resultadoCaixaPeriodo, `resultado-${mes.mesAno}`))}
+                      {renderCellResultado(relatorio.totais.resultadoCaixaPeriodo, 'resultado-total')}
                     </tr>
                   </tbody>
                 </table>
@@ -702,68 +702,68 @@ export function RelatoriosFinanceirosPage() {
                             <tbody className="divide-y divide-blue-200/50">
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via Boleto</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoBoleto))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoBoleto, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoBoleto, false, `boleto-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoBoleto, 0), false, 'boleto-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via Transferência</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoTransferencia))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoTransferencia, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoTransferencia, false, `transferencia-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoTransferencia, 0), false, 'transferencia-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via PIX</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoPix))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoPix, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoPix, false, `pix-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoPix, 0), false, 'pix-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Outros Recebimentos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos, false, `outros-recebimentos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0), false, 'outros-recebimentos-total')}
                               </tr>
                               <tr className="border-t border-blue-300">
                                 <td className="px-3 py-2 font-semibold text-slate-900">Pagamentos Fornecedores</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true, `fornecedores-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true, 'fornecedores-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Variáveis</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasVariaveis, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasVariaveis, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasVariaveis, true, `despesas-variaveis-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasVariaveis, 0), true, 'despesas-variaveis-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Impostos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosImpostos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosImpostos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosImpostos, true, `impostos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosImpostos, 0), true, 'impostos-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Administrativas</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasAdministrativas, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasAdministrativas, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasAdministrativas, true, `despesas-admin-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasAdministrativas, 0), true, 'despesas-admin-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas com Pessoal</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasPessoal, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasPessoal, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasPessoal, true, `despesas-pessoal-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasPessoal, 0), true, 'despesas-pessoal-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Financeiras</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasFinanceiras, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasFinanceiras, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasFinanceiras, true, `despesas-financeiras-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasFinanceiras, 0), true, 'despesas-financeiras-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Serviços de Terceiros</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosCustosServicosTerceiros, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosCustosServicosTerceiros, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosCustosServicosTerceiros, true, `servicos-terceiros-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosCustosServicosTerceiros, 0), true, 'servicos-terceiros-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Manutenção</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasManutencao, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasManutencao, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasManutencao, true, `manutencao-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasManutencao, 0), true, 'manutencao-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Marketing</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasMarketing, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasMarketing, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasMarketing, true, `marketing-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasMarketing, 0), true, 'marketing-total')}
                               </tr>
                             </tbody>
                           </table>
@@ -805,33 +805,33 @@ export function RelatoriosFinanceirosPage() {
                             <tbody className="divide-y divide-purple-200/50">
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Bônus e Rendimentos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.bonusRendimentos))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.bonusRendimentos, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.bonusRendimentos, false, `bonus-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.bonusRendimentos, 0), false, 'bonus-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Resgate Automático</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.resgateAutomatico))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.resgateAutomatico, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.resgateAutomatico, false, `resgate-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.resgateAutomatico, 0), false, 'resgate-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Aplicação Automática</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.aplicacaoAutomatica, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.aplicacaoAutomatica, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.aplicacaoAutomatica, true, `aplicacao-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.aplicacaoAutomatica, 0), true, 'aplicacao-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Aquisições de Ativo Imobilizado</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.aquisicoesAtivoImobilizado, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.aquisicoesAtivoImobilizado, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.aquisicoesAtivoImobilizado, true, `ativo-imobilizado-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.aquisicoesAtivoImobilizado, 0), true, 'ativo-imobilizado-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Obras e Reformas</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.obrasReformas, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.obrasReformas, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.obrasReformas, true, `obras-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.obrasReformas, 0), true, 'obras-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Investimentos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.investimentos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.investimentos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.investimentos, true, `investimentos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.investimentos, 0), true, 'investimentos-total')}
                               </tr>
                             </tbody>
                           </table>
@@ -873,53 +873,53 @@ export function RelatoriosFinanceirosPage() {
                             <tbody className="divide-y divide-orange-200/50">
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento de Empréstimo</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoEmprestimo))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoEmprestimo, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoEmprestimo, false, `emprestimo-receb-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoEmprestimo, 0), false, 'emprestimo-receb-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento Seguro</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoSeguro))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoSeguro, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoSeguro, false, `seguro-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoSeguro, 0), false, 'seguro-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento Outras Empresas</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoOutrasEmpresas))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoOutrasEmpresas, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoOutrasEmpresas, false, `outras-empresas-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoOutrasEmpresas, 0), false, 'outras-empresas-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Ressarcimento Cliente</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.ressarcimentoCliente, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.ressarcimentoCliente, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.ressarcimentoCliente, true, `ressarcimento-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.ressarcimentoCliente, 0), true, 'ressarcimento-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Pagamentos de Empréstimos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosEmprestimos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosEmprestimos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosEmprestimos, true, `emprestimo-pag-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosEmprestimos, 0), true, 'emprestimo-pag-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Pagamentos de Financiamentos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFinanciamentos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFinanciamentos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFinanciamentos, true, `financiamentos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFinanciamentos, 0), true, 'financiamentos-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Retirada Nordeste Serviço</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.retiradaNordesteServico, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradaNordesteServico, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.retiradaNordesteServico, true, `retirada-ns-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradaNordesteServico, 0), true, 'retirada-ns-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Retirada Rental Car</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.retiradaRentalCar, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradaRentalCar, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.retiradaRentalCar, true, `retirada-rc-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradaRentalCar, 0), true, 'retirada-rc-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Retiradas Sócios - N. Serviços</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.retiradasSociosNServicos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradasSociosNServicos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.retiradasSociosNServicos, true, `retirada-socios-ns-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradasSociosNServicos, 0), true, 'retirada-socios-ns-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Retiradas Sócios</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.retiradasSocios, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradasSocios, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.retiradasSocios, true, `retirada-socios-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.retiradasSocios, 0), true, 'retirada-socios-total')}
                               </tr>
                             </tbody>
                           </table>
@@ -981,8 +981,8 @@ export function RelatoriosFinanceirosPage() {
                           </Button>
                         </div>
                       </td>
-                      {relatorio.meses.map((mes) => renderCell(mes.totalEntradas))}
-                      {renderCell(relatorio.totais.totalEntradas)}
+                      {relatorio.meses.map((mes) => renderCell(mes.totalEntradas, false, `total-entradas-${mes.mesAno}`))}
+                      {renderCell(relatorio.totais.totalEntradas, false, 'total-entradas-total')}
                     </tr>
                     <tr className="bg-red-50/50 font-semibold">
                       <td className="px-4 py-3 font-semibold text-red-900">
@@ -1008,13 +1008,13 @@ export function RelatoriosFinanceirosPage() {
                           </Button>
                         </div>
                       </td>
-                      {relatorio.meses.map((mes) => renderCell(mes.totalSaidas, true))}
-                      {renderCell(relatorio.totais.totalSaidas, true)}
+                      {relatorio.meses.map((mes) => renderCell(mes.totalSaidas, true, `total-saidas-${mes.mesAno}`))}
+                      {renderCell(relatorio.totais.totalSaidas, true, 'total-saidas-total')}
                     </tr>
                     <tr className="bg-green-50 font-bold border-t-2 border-green-300">
                       <td className="px-4 py-3 font-bold text-green-900">Caixa Líquido Operacional</td>
-                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoOperacional))}
-                      {renderCellResultado(relatorio.totais.caixaLiquidoOperacional)}
+                      {relatorio.meses.map((mes) => renderCellResultado(mes.caixaLiquidoOperacional, `caixa-operacional-${mes.mesAno}`))}
+                      {renderCellResultado(relatorio.totais.caixaLiquidoOperacional, 'caixa-operacional-total')}
                     </tr>
                   </tbody>
                 </table>
@@ -1051,23 +1051,23 @@ export function RelatoriosFinanceirosPage() {
                             <tbody className="divide-y divide-blue-200/50">
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via Boleto</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoBoleto))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoBoleto, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoBoleto, false, `detalhes-entradas-boleto-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoBoleto, 0), false, 'detalhes-entradas-boleto-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via Transferência</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoTransferencia))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoTransferencia, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoTransferencia, false, `detalhes-entradas-transferencia-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoTransferencia, 0), false, 'detalhes-entradas-transferencia-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Recebimento via PIX</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoPix))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoPix, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoPix, false, `detalhes-entradas-pix-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.recebimentoPix, 0), false, 'detalhes-entradas-pix-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Outros Recebimentos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0))}
+                                {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos, false, `detalhes-entradas-outros-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0), false, 'detalhes-entradas-outros-total')}
                               </tr>
                             </tbody>
                           </table>
@@ -1109,48 +1109,48 @@ export function RelatoriosFinanceirosPage() {
                             <tbody className="divide-y divide-red-200/50">
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Fornecedores</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true, `detalhes-saidas-fornecedores-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true, 'detalhes-saidas-fornecedores-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Variáveis</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasVariaveis, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasVariaveis, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasVariaveis, true, `detalhes-saidas-variaveis-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasVariaveis, 0), true, 'detalhes-saidas-variaveis-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Impostos</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosImpostos, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosImpostos, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosImpostos, true, `detalhes-saidas-impostos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosImpostos, 0), true, 'detalhes-saidas-impostos-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Administrativas</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasAdministrativas, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasAdministrativas, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasAdministrativas, true, `detalhes-saidas-admin-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasAdministrativas, 0), true, 'detalhes-saidas-admin-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas com Pessoal</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasPessoal, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasPessoal, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasPessoal, true, `detalhes-saidas-pessoal-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasPessoal, 0), true, 'detalhes-saidas-pessoal-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Despesas Financeiras</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasFinanceiras, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasFinanceiras, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasFinanceiras, true, `detalhes-saidas-financeiras-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasFinanceiras, 0), true, 'detalhes-saidas-financeiras-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Serviços de Terceiros</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosCustosServicosTerceiros, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosCustosServicosTerceiros, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosCustosServicosTerceiros, true, `detalhes-saidas-terceiros-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosCustosServicosTerceiros, 0), true, 'detalhes-saidas-terceiros-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Manutenção</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasManutencao, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasManutencao, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasManutencao, true, `detalhes-saidas-manutencao-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasManutencao, 0), true, 'detalhes-saidas-manutencao-total')}
                               </tr>
                               <tr>
                                 <td className="px-3 py-2 text-slate-700">Marketing</td>
-                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasMarketing, true))}
-                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasMarketing, 0), true)}
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosDespesasMarketing, true, `detalhes-saidas-marketing-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosDespesasMarketing, 0), true, 'detalhes-saidas-marketing-total')}
                               </tr>
                             </tbody>
                           </table>
@@ -1196,7 +1196,7 @@ export function RelatoriosFinanceirosPage() {
                     </tr>
                     <tr className="bg-green-50/50">
                       <td className="px-4 py-3 font-bold text-green-900">Saldo Final</td>
-                      {relatorio.meses.map((mes) => renderCell(mes.saldoFimPeriodo))}
+                      {relatorio.meses.map((mes) => renderCell(mes.saldoFimPeriodo, false, `saldo-fim-${mes.mesAno}`))}
                     </tr>
                   </tbody>
                 </table>

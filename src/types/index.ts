@@ -358,6 +358,7 @@ export interface NotaFiscal {
   itens: NotaFiscalItem[]
   createdAt: string
   updatedAt: string
+  avisosEstoque?: string[]
 }
 
 // Request DTOs

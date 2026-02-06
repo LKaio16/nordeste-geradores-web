@@ -382,7 +382,10 @@ export function ClientesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/clientes/${cliente.id}/editar`)
+                            }}
                             className="h-8 w-8"
                             title="Editar"
                           >
@@ -391,7 +394,10 @@ export function ClientesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(cliente.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(cliente.id)
+                            }}
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             title="Excluir"
                           >

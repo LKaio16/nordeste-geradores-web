@@ -138,7 +138,7 @@ export function AppSidebar() {
             <div>
               {!collapsed && (
                 <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
+                  <span className="h-0.5 w-4 bg-nordeste rounded-full"></span>
                   Financeiro & Almoxarifado
                 </p>
               )}
@@ -179,7 +179,7 @@ export function AppSidebar() {
             <div>
               {!collapsed && (
                 <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
+                  <span className="h-0.5 w-4 bg-nordeste rounded-full"></span>
                   Locações & Serviços
                 </p>
               )}
@@ -220,7 +220,7 @@ export function AppSidebar() {
             <div>
               {!collapsed && (
                 <p className="px-3 text-xs font-semibold text-nordeste uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <div className="h-0.5 w-4 bg-nordeste rounded-full"></div>
+                  <span className="h-0.5 w-4 bg-nordeste rounded-full"></span>
                   Administração
                 </p>
               )}

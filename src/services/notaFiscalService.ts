@@ -27,6 +27,7 @@ function formatNotaFiscalFromResponse(nota: any): NotaFiscal {
     })),
     createdAt: nota.createdAt ? (typeof nota.createdAt === 'string' ? nota.createdAt : nota.createdAt) : new Date().toISOString(),
     updatedAt: nota.updatedAt ? (typeof nota.updatedAt === 'string' ? nota.updatedAt : nota.updatedAt) : new Date().toISOString(),
+    avisosEstoque: nota.avisosEstoque || [],
   }
 }
 
@@ -54,6 +55,42 @@ class NotaFiscalService {
       const response = await api.post<any>(API_ENDPOINTS.notasFiscais.create, data)
       return formatNotaFiscalFromResponse(response.data)
     } catch (error: any) {
+      // Se a resposta contém dados da nota (mesmo com erro), retornar formatada
+      if (error.response?.data && error.response.data.id) {
+        console.log('⚠️ Erro mas resposta contém dados da nota, formatando...')
+        return formatNotaFiscalFromResponse(error.response.data)
+      }
+      
+      // Se for erro de estoque insuficiente, tentar extrair informações
+      if (error.response?.data) {
+        const errorData = error.response.data
+        
+        // Se contém avisos de estoque, criar uma nota parcial para exibir os avisos
+        if (errorData.avisosEstoque && Array.isArray(errorData.avisosEstoque) && errorData.avisosEstoque.length > 0) {
+          console.log('⚠️ Erro com avisos de estoque, retornando nota parcial')
+          // Tentar construir uma resposta parcial com os avisos
+          if (errorData.id) {
+            return formatNotaFiscalFromResponse(errorData)
+          }
+        }
+        
+        // Se for erro de estoque insuficiente específico, criar aviso
+        if (errorData.message && errorData.message.includes('Quantidade insuficiente')) {
+          const avisos: string[] = []
+          if (errorData.produtoDescricao) {
+            avisos.push(`Produto '${errorData.produtoDescricao}': Quantidade insuficiente em estoque. Solicitado: ${errorData.quantidadeSolicitada || 'N/A'}, Disponível: ${errorData.quantidadeDisponivel || 'N/A'}`)
+          } else {
+            avisos.push(errorData.message)
+          }
+          
+          // Se tiver ID da nota, retornar com avisos
+          if (errorData.id) {
+            const notaParcial = formatNotaFiscalFromResponse(errorData)
+            return { ...notaParcial, avisosEstoque: avisos }
+          }
+        }
+      }
+      
       const message = error.response?.data?.message || error.message || 'Erro ao criar nota fiscal'
       throw new Error(message)
     }
@@ -64,6 +101,42 @@ class NotaFiscalService {
       const response = await api.put<any>(API_ENDPOINTS.notasFiscais.update(id), data)
       return formatNotaFiscalFromResponse(response.data)
     } catch (error: any) {
+      // Se a resposta contém dados da nota (mesmo com erro), retornar formatada
+      if (error.response?.data && error.response.data.id) {
+        console.log('⚠️ Erro mas resposta contém dados da nota, formatando...')
+        return formatNotaFiscalFromResponse(error.response.data)
+      }
+      
+      // Se for erro de estoque insuficiente, tentar extrair informações
+      if (error.response?.data) {
+        const errorData = error.response.data
+        
+        // Se contém avisos de estoque, criar uma nota parcial para exibir os avisos
+        if (errorData.avisosEstoque && Array.isArray(errorData.avisosEstoque) && errorData.avisosEstoque.length > 0) {
+          console.log('⚠️ Erro com avisos de estoque, retornando nota parcial')
+          // Tentar construir uma resposta parcial com os avisos
+          if (errorData.id) {
+            return formatNotaFiscalFromResponse(errorData)
+          }
+        }
+        
+        // Se for erro de estoque insuficiente específico, criar aviso
+        if (errorData.message && errorData.message.includes('Quantidade insuficiente')) {
+          const avisos: string[] = []
+          if (errorData.produtoDescricao) {
+            avisos.push(`Produto '${errorData.produtoDescricao}': Quantidade insuficiente em estoque. Solicitado: ${errorData.quantidadeSolicitada || 'N/A'}, Disponível: ${errorData.quantidadeDisponivel || 'N/A'}`)
+          } else {
+            avisos.push(errorData.message)
+          }
+          
+          // Se tiver ID da nota, retornar com avisos
+          if (errorData.id) {
+            const notaParcial = formatNotaFiscalFromResponse(errorData)
+            return { ...notaParcial, avisosEstoque: avisos }
+          }
+        }
+      }
+      
       const message = error.response?.data?.message || error.message || 'Erro ao atualizar nota fiscal'
       throw new Error(message)
     }

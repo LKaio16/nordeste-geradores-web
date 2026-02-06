@@ -53,6 +53,8 @@ export function NotaFiscalFormPage() {
   const [showGerarSaidaDialog, setShowGerarSaidaDialog] = useState(false)
   const [notaCriadaId, setNotaCriadaId] = useState<string | null>(null)
   const [gerandoSaida, setGerandoSaida] = useState(false)
+  const [showAvisosEstoqueDialog, setShowAvisosEstoqueDialog] = useState(false)
+  const [avisosEstoque, setAvisosEstoque] = useState<string[]>([])
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loadingFornecedores, setLoadingFornecedores] = useState(true)
@@ -318,24 +320,96 @@ export function NotaFiscalFormPage() {
       })
 
       if (isEditing && id) {
-        await notaFiscalService.atualizar(id, dataToSubmit)
-        navigate('/notas-entrada')
-      } else {
-        const notaCriada = await notaFiscalService.criar(dataToSubmit)
+        const notaAtualizada = await notaFiscalService.atualizar(id, dataToSubmit)
+        console.log('✅ Nota atualizada:', notaAtualizada)
+        console.log('📋 Avisos de estoque:', notaAtualizada.avisosEstoque)
         
-        // Se for nota de entrada, perguntar se quer gerar nota de saída
-        if (dataToSubmit.tipo === 'ENTRADA') {
-          setNotaCriadaId(notaCriada.id)
-          setShowGerarSaidaDialog(true)
+        // Verificar se há avisos de estoque
+        if (notaAtualizada.avisosEstoque && notaAtualizada.avisosEstoque.length > 0) {
+          console.log('⚠️ Exibindo dialog de avisos de estoque')
+          setAvisosEstoque(notaAtualizada.avisosEstoque)
+          setShowAvisosEstoqueDialog(true)
         } else {
           navigate('/notas-entrada')
         }
+      } else {
+        const notaCriada = await notaFiscalService.criar(dataToSubmit)
+        console.log('✅ Nota criada:', notaCriada)
+        console.log('📋 Avisos de estoque:', notaCriada.avisosEstoque)
+        
+        // Verificar se há avisos de estoque
+        if (notaCriada.avisosEstoque && notaCriada.avisosEstoque.length > 0) {
+          console.log('⚠️ Exibindo dialog de avisos de estoque')
+          setAvisosEstoque(notaCriada.avisosEstoque)
+          setShowAvisosEstoqueDialog(true)
+          
+          // Se for nota de entrada, também mostrar o dialog de gerar saída depois
+          if (dataToSubmit.tipo === 'ENTRADA') {
+            setNotaCriadaId(notaCriada.id)
+          }
+        } else {
+          // Se for nota de entrada, perguntar se quer gerar nota de saída
+          if (dataToSubmit.tipo === 'ENTRADA') {
+            setNotaCriadaId(notaCriada.id)
+            setShowGerarSaidaDialog(true)
+          } else {
+            navigate('/notas-entrada')
+          }
+        }
       }
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar nota fiscal')
-    } finally {
-      setLoading(false)
-    }
+     } catch (err: any) {
+       console.error('Erro ao salvar nota fiscal:', err)
+       
+       // Tentar extrair avisos da resposta de erro se houver
+       if (err.response?.data) {
+         const errorData = err.response.data
+         
+         // Se a resposta contém avisos de estoque, mostrar dialog
+         if (errorData.avisosEstoque && Array.isArray(errorData.avisosEstoque) && errorData.avisosEstoque.length > 0) {
+           setAvisosEstoque(errorData.avisosEstoque)
+           setShowAvisosEstoqueDialog(true)
+           
+           // Se for nota de entrada e tiver ID, salvar para mostrar dialog de gerar saída depois
+           if (formData.tipo === 'ENTRADA' && errorData.id) {
+             setNotaCriadaId(errorData.id)
+           }
+           return // Não mostrar erro genérico se houver avisos
+         }
+         
+         // Se for erro de estoque insuficiente, formatar mensagem amigável
+         if (errorData.message && errorData.message.includes('Quantidade insuficiente')) {
+           const avisos: string[] = []
+           if (errorData.produtoDescricao) {
+             avisos.push(`Produto '${errorData.produtoDescricao}': Quantidade insuficiente em estoque. Solicitado: ${errorData.quantidadeSolicitada || 'N/A'}, Disponível: ${errorData.quantidadeDisponivel || 'N/A'}`)
+           } else {
+             avisos.push(errorData.message)
+           }
+           setAvisosEstoque(avisos)
+           setShowAvisosEstoqueDialog(true)
+           
+           // Se for nota de entrada e tiver ID, salvar para mostrar dialog de gerar saída depois
+           if (formData.tipo === 'ENTRADA' && errorData.id) {
+             setNotaCriadaId(errorData.id)
+           }
+           return // Não mostrar erro genérico
+         }
+         
+         // Se a resposta contém dados da nota (mesmo com erro), tentar processar
+         if (errorData.id && errorData.avisosEstoque) {
+           setAvisosEstoque(errorData.avisosEstoque)
+           setShowAvisosEstoqueDialog(true)
+           
+           if (formData.tipo === 'ENTRADA' && errorData.id) {
+             setNotaCriadaId(errorData.id)
+           }
+           return
+         }
+       }
+       
+       setError(err.message || 'Erro ao salvar nota fiscal')
+     } finally {
+       setLoading(false)
+     }
   }
 
   const addItem = (scrollToNew = true) => {
@@ -1317,6 +1391,60 @@ export function NotaFiscalFormPage() {
       </Dialog>
 
       {/* Dialog para gerar nota de saída após criar entrada */}
+      {/* Dialog de Avisos de Estoque */}
+      <Dialog open={showAvisosEstoqueDialog} onOpenChange={setShowAvisosEstoqueDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertCircle className="h-5 w-5" />
+              Avisos de Estoque
+            </DialogTitle>
+            <DialogDescription>
+              A nota foi criada/atualizada com sucesso, mas algumas movimentações de estoque não puderam ser realizadas devido à quantidade insuficiente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800 font-medium mb-3">
+                Os seguintes produtos não possuem estoque suficiente:
+              </p>
+              <ul className="space-y-2">
+                {avisosEstoque.map((aviso, index) => (
+                  <li key={index} className="text-sm text-amber-700 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{aviso}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Observação:</strong> A movimentação de estoque pode ser feita manualmente depois quando houver estoque suficiente.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button
+              type="button"
+              onClick={() => {
+                setShowAvisosEstoqueDialog(false)
+                setAvisosEstoque([])
+                
+                // Se for nota de entrada e tiver notaCriadaId, mostrar dialog de gerar saída
+                if (formData.tipo === 'ENTRADA' && notaCriadaId) {
+                  setShowGerarSaidaDialog(true)
+                } else {
+                  navigate('/notas-entrada')
+                }
+              }}
+              className="gap-2"
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showGerarSaidaDialog} onOpenChange={setShowGerarSaidaDialog}>
         <DialogContent>
           <DialogHeader>

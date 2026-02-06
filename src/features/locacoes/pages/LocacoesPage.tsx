@@ -356,7 +356,10 @@ export function LocacoesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleFinalizar(locacao.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleFinalizar(locacao.id)
+                                }}
                                 className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                               >
                                 <CheckCircle2 className="h-4 w-4" />
@@ -365,7 +368,10 @@ export function LocacoesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/locacoes/${locacao.id}/editar`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/locacoes/${locacao.id}/editar`)
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />
@@ -373,7 +379,10 @@ export function LocacoesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDelete(locacao.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(locacao.id)
+                              }}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
