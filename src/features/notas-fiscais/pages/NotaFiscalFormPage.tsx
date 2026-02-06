@@ -113,6 +113,7 @@ export function NotaFiscalFormPage() {
     tipo: TipoNotaFiscal.ENTRADA,
     fornecedor: '',
     cnpjEmpresa: '',
+    cnpjLancamento: '14.847.748/0001-39', // CNPJ principal por padrão
     dataEmissao: new Date().toISOString().split('T')[0],
     numeroNota: '',
     formaPagamento: FormaPagamento.PIX,
@@ -140,6 +141,7 @@ export function NotaFiscalFormPage() {
         tipo: TipoNotaFiscal.SAIDA,
         fornecedor: notaEntrada.fornecedor,
         cnpjEmpresa: notaEntrada.cnpjEmpresa,
+        cnpjLancamento: notaEntrada.cnpjLancamento || '14.847.748/0001-39',
         fornecedorId: notaEntrada.fornecedorId,
         clienteId: notaEntrada.clienteId,
         dataEmissao: new Date().toISOString().split('T')[0],
@@ -229,6 +231,7 @@ export function NotaFiscalFormPage() {
         tipo: nota.tipo,
         fornecedor: nota.fornecedor,
         cnpjEmpresa: maskCNPJ(nota.cnpjEmpresa),
+        cnpjLancamento: nota.cnpjLancamento || '14.847.748/0001-39',
         dataEmissao: nota.dataEmissao,
         numeroNota: nota.numeroNota,
         formaPagamento: nota.formaPagamento,
@@ -303,6 +306,7 @@ export function NotaFiscalFormPage() {
       const dataToSubmit: NotaFiscalRequest = {
         ...formData,
         cnpjEmpresa: unmaskCPFCNPJ(formData.cnpjEmpresa),
+        cnpjLancamento: unmaskCPFCNPJ(formData.cnpjLancamento),
         itens: itensComProdutoId,
         // Notas de saída não têm forma de pagamento
         formaPagamento: formData.tipo === TipoNotaFiscal.SAIDA ? undefined : formData.formaPagamento,
@@ -752,6 +756,21 @@ export function NotaFiscalFormPage() {
                   onChange={(e) => setFormData({ ...formData, dataEmissao: e.target.value })}
                   required
                 />
+              </div>
+
+              {/* CNPJ de Lançamento */}
+              <div className="space-y-2">
+                <Label htmlFor="cnpjLancamento">CNPJ de Lançamento *</Label>
+                <select
+                  id="cnpjLancamento"
+                  value={formData.cnpjLancamento}
+                  onChange={(e) => setFormData({ ...formData, cnpjLancamento: e.target.value })}
+                  className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
+                  required
+                >
+                  <option value="14.847.748/0001-39">14.847.748/0001-39 (Principal)</option>
+                  <option value="59.302.359/0001-66">59.302.359/0001-66 (Secundário)</option>
+                </select>
               </div>
 
               {/* Forma de Pagamento - apenas para notas de ENTRADA */}

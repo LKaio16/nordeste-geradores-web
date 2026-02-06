@@ -97,6 +97,7 @@ export function NotaFiscalDetalhesPage() {
         tipo: TipoNotaFiscal.SAIDA,
         fornecedor: nota.fornecedor,
         cnpjEmpresa: nota.cnpjEmpresa,
+        cnpjLancamento: nota.cnpjLancamento || '14.847.748/0001-39',
         fornecedorId: nota.fornecedorId,
         clienteId: nota.clienteId,
         dataEmissao: new Date().toISOString().split('T')[0],
@@ -236,6 +237,10 @@ export function NotaFiscalDetalhesPage() {
                     <p className="font-semibold">{nota.formaPagamento.replace('_', ' ')}</p>
                   </div>
                 )}
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">CNPJ de Lançamento</p>
+                  <p className="font-semibold">{formatCNPJ(nota.cnpjLancamento || '14.847.748/0001-39')}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

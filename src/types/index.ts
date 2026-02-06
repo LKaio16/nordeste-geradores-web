@@ -349,6 +349,7 @@ export interface NotaFiscal {
   tipo: TipoNotaFiscal
   fornecedor: string
   cnpjEmpresa: string
+  cnpjLancamento: string
   fornecedorId?: string
   clienteId?: string
   dataEmissao: string
@@ -423,6 +424,7 @@ export interface NotaFiscalRequest {
   tipo: TipoNotaFiscal
   fornecedor: string
   cnpjEmpresa: string
+  cnpjLancamento: string
   dataEmissao: string
   numeroNota: string
   formaPagamento?: FormaPagamento

@@ -8,6 +8,7 @@ function formatNotaFiscalFromResponse(nota: any): NotaFiscal {
     tipo: nota.tipo,
     fornecedor: nota.fornecedor,
     cnpjEmpresa: nota.cnpjEmpresa,
+    cnpjLancamento: nota.cnpjLancamento || '14.847.748/0001-39', // Default para CNPJ principal
     fornecedorId: nota.fornecedorId ? String(nota.fornecedorId) : undefined,
     clienteId: nota.clienteId ? String(nota.clienteId) : undefined,
     dataEmissao: nota.dataEmissao ? (typeof nota.dataEmissao === 'string' ? nota.dataEmissao : nota.dataEmissao.split('T')[0]) : '',
