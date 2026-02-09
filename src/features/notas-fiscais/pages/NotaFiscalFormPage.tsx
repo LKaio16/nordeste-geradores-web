@@ -303,14 +303,36 @@ export function NotaFiscalFormPage() {
         desconto: item.desconto || 0,
       }))
       
+      // Garantir que cnpjLancamento não seja null ou undefined
+      const cnpjLancamentoValue = formData.cnpjLancamento || '14.847.748/0001-39'
+      const cnpjLancamentoUnmasked = cnpjLancamentoValue ? unmaskCPFCNPJ(cnpjLancamentoValue) : '14847748000139'
+      
+      if (!cnpjLancamentoUnmasked || cnpjLancamentoUnmasked.length === 0) {
+        throw new Error('CNPJ de lançamento é obrigatório')
+      }
+      
       const dataToSubmit: NotaFiscalRequest = {
-        ...formData,
+        tipo: formData.tipo,
+        fornecedor: formData.fornecedor,
         cnpjEmpresa: unmaskCPFCNPJ(formData.cnpjEmpresa),
-        cnpjLancamento: unmaskCPFCNPJ(formData.cnpjLancamento),
+        cnpjLancamento: cnpjLancamentoUnmasked, // Garantir que sempre tenha valor
+        dataEmissao: formData.dataEmissao,
+        numeroNota: formData.numeroNota,
+        fornecedorId: formData.fornecedorId,
+        clienteId: formData.clienteId,
         itens: itensComProdutoId,
         // Notas de saída não têm forma de pagamento
         formaPagamento: formData.tipo === TipoNotaFiscal.SAIDA ? undefined : formData.formaPagamento,
       }
+      
+      // Debug: verificar cnpjLancamento
+      console.log('🔍 CNPJ Lançamento antes do submit:', {
+        original: formData.cnpjLancamento,
+        value: cnpjLancamentoValue,
+        unmasked: cnpjLancamentoUnmasked,
+        final: dataToSubmit.cnpjLancamento,
+        dataToSubmit: JSON.stringify(dataToSubmit, null, 2),
+      })
       
       // Debug: verificar se produtoId está sendo enviado
       console.log('📦 Dados da nota fiscal a serem enviados:', {
@@ -543,6 +565,8 @@ export function NotaFiscalFormPage() {
       cnpjEmpresa: maskCNPJ(fornecedor.cnpj),
       fornecedorId: fornecedor.id,
       clienteId: undefined,
+      // Preservar cnpjLancamento
+      cnpjLancamento: formData.cnpjLancamento || '14.847.748/0001-39',
     })
     setFornecedorSearchTerm(fornecedor.nome) // Preencher com o nome para mostrar que está selecionado
     setShowFornecedorDropdown(false)
@@ -558,6 +582,8 @@ export function NotaFiscalFormPage() {
       cnpjEmpresa: maskCNPJ(cliente.cnpj),
       clienteId: cliente.id,
       fornecedorId: undefined,
+      // Preservar cnpjLancamento
+      cnpjLancamento: formData.cnpjLancamento || '14.847.748/0001-39',
     })
     setClienteSearchTerm(cliente.nome) // Preencher com o nome para mostrar que está selecionado
     setShowClienteDropdown(false)
@@ -725,6 +751,8 @@ export function NotaFiscalFormPage() {
                         numeroNota: precisaGerarNumero ? gerarNumeroNotaSaida(prev.dataEmissao) : prev.numeroNota,
                         // Limpar forma de pagamento se mudar para SAIDA
                         formaPagamento: novoTipo === TipoNotaFiscal.SAIDA ? undefined : (prev.formaPagamento || FormaPagamento.PIX),
+                        // Preservar cnpjLancamento
+                        cnpjLancamento: prev.cnpjLancamento || '14.847.748/0001-39',
                       }
                     })
                   }}
@@ -1025,6 +1053,8 @@ export function NotaFiscalFormPage() {
                       cnpjEmpresa: '',
                       fornecedorId: undefined,
                       clienteId: undefined,
+                      // Preservar cnpjLancamento
+                      cnpjLancamento: formData.cnpjLancamento || '14.847.748/0001-39',
                     })
                   }}
                   className="gap-1 text-xs"
