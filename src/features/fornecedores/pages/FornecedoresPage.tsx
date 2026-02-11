@@ -73,11 +73,12 @@ export function FornecedoresPage() {
   }
 
   const filteredFornecedores = fornecedores.filter((fornecedor) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      fornecedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fornecedor.cnpj.includes(searchTerm) ||
-      fornecedor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fornecedor.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+      (fornecedor.nome?.toLowerCase() || '').includes(searchLower) ||
+      (fornecedor.cnpj?.toLowerCase() || '').includes(searchLower) ||
+      (fornecedor.email?.toLowerCase() || '').includes(searchLower) ||
+      (fornecedor.cidade?.toLowerCase() || '').includes(searchLower)
 
     const matchesStatus = !filters.status || fornecedor.status === filters.status
     const matchesEstado = !filters.estado || fornecedor.estado === filters.estado

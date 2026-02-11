@@ -78,11 +78,12 @@ export function ClientesPage() {
   }
 
   const filteredClientes = clientes.filter((cliente) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.cnpj.includes(searchTerm) ||
-      cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+      (cliente.nome?.toLowerCase() || '').includes(searchLower) ||
+      (cliente.cnpj?.toLowerCase() || '').includes(searchLower) ||
+      (cliente.email?.toLowerCase() || '').includes(searchLower) ||
+      (cliente.cidade?.toLowerCase() || '').includes(searchLower)
 
     const matchesStatus = !filters.status || cliente.status === filters.status
     const matchesEstado = !filters.estado || cliente.estado === filters.estado
