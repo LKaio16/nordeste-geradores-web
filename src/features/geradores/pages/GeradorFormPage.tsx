@@ -77,10 +77,6 @@ export function GeradorFormPage() {
       return
     }
 
-    if (!formData.numeroSerie.trim()) {
-      setError('Número de série é obrigatório')
-      return
-    }
 
     if (!formData.potencia.trim()) {
       setError('Potência é obrigatória')
@@ -200,13 +196,12 @@ export function GeradorFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="numeroSerie">Número de Série *</Label>
+                <Label htmlFor="numeroSerie">Número de Série</Label>
                 <Input
                   id="numeroSerie"
                   value={formData.numeroSerie}
                   onChange={(e) => setFormData({ ...formData, numeroSerie: e.target.value })}
                   placeholder="Ex: GEN2025001"
-                  required
                 />
               </div>
 

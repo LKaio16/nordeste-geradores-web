@@ -312,14 +312,13 @@ export function ClienteFormPage() {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="endereco">Endereço *</Label>
+                <Label htmlFor="endereco">Endereço</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
                     id="endereco"
                     value={formData.endereco}
                     onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                    required
                     placeholder="Rua, número, complemento"
                     className="pl-10"
                   />
