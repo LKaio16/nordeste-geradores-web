@@ -41,6 +41,7 @@ export function NotasFiscaisPage() {
     tipo?: TipoNotaFiscal
     formaPagamento?: FormaPagamento
     fornecedorId?: string
+    origem?: 'fornecedor' | 'cliente'
     dataInicio?: string
     dataFim?: string
   }>({})
@@ -110,6 +111,10 @@ export function NotasFiscaisPage() {
         !filters.fornecedorId ||
         (nota.fornecedor &&
           fornecedores.find((f) => f.id === filters.fornecedorId)?.nome === nota.fornecedor)
+      const matchesOrigem =
+        !filters.origem ||
+        (filters.origem === 'fornecedor' && !!nota.fornecedorId) ||
+        (filters.origem === 'cliente' && !!nota.clienteId)
       const matchesDataInicio = !filters.dataInicio || nota.dataEmissao >= filters.dataInicio
       const matchesDataFim = !filters.dataFim || nota.dataEmissao <= filters.dataFim
 
@@ -118,6 +123,7 @@ export function NotasFiscaisPage() {
         matchesTipo &&
         matchesFormaPagamento &&
         matchesFornecedor &&
+        matchesOrigem &&
         matchesDataInicio &&
         matchesDataFim
       )
@@ -242,7 +248,7 @@ export function NotasFiscaisPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                     {/* Filtro por Tipo */}
                     <div className="space-y-2">
                       <Label htmlFor="filterTipo">Tipo</Label>
@@ -307,6 +313,28 @@ export function NotasFiscaisPage() {
                             {fornecedor.nome}
                           </option>
                         ))}
+                      </select>
+                    </div>
+
+                    {/* Filtro Notas de Fornecedores / Notas de Clientes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="filterOrigem">Origem</Label>
+                      <select
+                        id="filterOrigem"
+                        value={filters.origem || ''}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            origem: e.target.value
+                              ? (e.target.value as 'fornecedor' | 'cliente')
+                              : undefined,
+                          })
+                        }
+                        className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
+                      >
+                        <option value="">Todas</option>
+                        <option value="fornecedor">Notas de fornecedores</option>
+                        <option value="cliente">Notas de clientes</option>
                       </select>
                     </div>
 
