@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Landmark,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -283,6 +284,22 @@ export function PropostaDetalhesPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{proposta.observacoes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {proposta.dadosBancarios && (
+          <Card className="shadow-sm md:col-span-2">
+            <CardHeader className="border-b border-slate-200">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 bg-slate-100 rounded-lg">
+                  <Landmark className="h-5 w-5 text-slate-600" />
+                </div>
+                Dados bancários
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{proposta.dadosBancarios}</p>
             </CardContent>
           </Card>
         )}

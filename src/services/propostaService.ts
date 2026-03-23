@@ -22,6 +22,7 @@ function formatPropostaFromResponse(proposta: any): Proposta {
     dataEmissao: proposta.dataEmissao ? (typeof proposta.dataEmissao === 'string' ? proposta.dataEmissao : proposta.dataEmissao.toString()) : '',
     validade: proposta.validade ? (typeof proposta.validade === 'string' ? proposta.validade : proposta.validade.toString()) : '',
     observacoes: proposta.observacoes || undefined,
+    dadosBancarios: proposta.dadosBancarios || undefined,
     valorTotal: proposta.valorTotal ? parseFloat(proposta.valorTotal) : 0,
     status: proposta.status,
     formaPagamento: proposta.formaPagamento || undefined,

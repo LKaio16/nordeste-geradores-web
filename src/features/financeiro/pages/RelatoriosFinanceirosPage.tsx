@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { relatorioFinanceiroService } from '@/services/relatorioFinanceiroService'
 import { relatorioNotaFiscalService, RelatorioNotaFiscal } from '@/services/relatorioNotaFiscalService'
+import { gerarPdfRelatorioContas } from '../utils/relatorioFinanceiroPdf'
 import { RelatorioFinanceiro, MesRelatorio } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -209,9 +210,19 @@ export function RelatoriosFinanceirosPage() {
             </Button>
           </div>
           {(relatorio || relatorioNotas) && (
-            <Button variant="outline" className="gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                if (tipoRelatorio === 'contas' && relatorio) {
+                  gerarPdfRelatorioContas(relatorio)
+                } else {
+                  alert('Exportação em PDF disponível atualmente para o relatório de Contas. Em breve para Notas Fiscais.')
+                }
+              }}
+            >
               <Download className="h-4 w-4" />
-              Exportar
+              Exportar PDF
             </Button>
           )}
         </div>
@@ -720,8 +731,18 @@ export function RelatoriosFinanceirosPage() {
                                 {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos, false, `outros-recebimentos-${mes.mesAno}`))}
                                 {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0), false, 'outros-recebimentos-total')}
                               </tr>
+                              <tr>
+                                <td className="px-3 py-2 font-semibold text-slate-900">Locações de geradores</td>
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoLocacoesGeradores ?? 0, false, `locacoes-geradores-receb-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + (m.recebimentoLocacoesGeradores ?? 0), 0), false, 'locacoes-geradores-receb-total')}
+                              </tr>
                               <tr className="border-t border-blue-300">
-                                <td className="px-3 py-2 font-semibold text-slate-900">Pagamentos Fornecedores</td>
+                                <td className="px-3 py-2 text-slate-700">Compra de insumos</td>
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosComprasInsumos ?? 0, true, `compras-insumos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + (m.pagamentosComprasInsumos ?? 0), 0), true, 'compras-insumos-total')}
+                              </tr>
+                              <tr className="border-t border-blue-300">
+                                <td className="px-3 py-2 font-semibold text-slate-900">Outros Pagamentos Fornecedores</td>
                                 {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true, `fornecedores-${mes.mesAno}`))}
                                 {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true, 'fornecedores-total')}
                               </tr>
@@ -1069,6 +1090,11 @@ export function RelatoriosFinanceirosPage() {
                                 {relatorio.meses.map((mes) => renderCell(mes.outrosRecebimentos, false, `detalhes-entradas-outros-${mes.mesAno}`))}
                                 {renderCell(relatorio.meses.reduce((sum, m) => sum + m.outrosRecebimentos, 0), false, 'detalhes-entradas-outros-total')}
                               </tr>
+                              <tr>
+                                <td className="px-3 py-2 font-semibold text-slate-900">Locações de geradores</td>
+                                {relatorio.meses.map((mes) => renderCell(mes.recebimentoLocacoesGeradores ?? 0, false, `detalhes-entradas-locacoes-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + (m.recebimentoLocacoesGeradores ?? 0), 0), false, 'detalhes-entradas-locacoes-total')}
+                              </tr>
                             </tbody>
                           </table>
                         </div>
@@ -1108,7 +1134,12 @@ export function RelatoriosFinanceirosPage() {
                             </thead>
                             <tbody className="divide-y divide-red-200/50">
                               <tr>
-                                <td className="px-3 py-2 text-slate-700">Fornecedores</td>
+                                <td className="px-3 py-2 text-slate-700">Compra de insumos</td>
+                                {relatorio.meses.map((mes) => renderCell(mes.pagamentosComprasInsumos ?? 0, true, `detalhes-saidas-insumos-${mes.mesAno}`))}
+                                {renderCell(relatorio.meses.reduce((sum, m) => sum + (m.pagamentosComprasInsumos ?? 0), 0), true, 'detalhes-saidas-insumos-total')}
+                              </tr>
+                              <tr>
+                                <td className="px-3 py-2 text-slate-700">Outros Fornecedores</td>
                                 {relatorio.meses.map((mes) => renderCell(mes.pagamentosFornecedores, true, `detalhes-saidas-fornecedores-${mes.mesAno}`))}
                                 {renderCell(relatorio.meses.reduce((sum, m) => sum + m.pagamentosFornecedores, 0), true, 'detalhes-saidas-fornecedores-total')}
                               </tr>

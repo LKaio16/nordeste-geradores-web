@@ -479,6 +479,7 @@ export interface Proposta {
   dataEmissao: string
   validade: string
   observacoes?: string
+  dadosBancarios?: string
   valorTotal: number
   status: StatusProposta
   formaPagamento?: string
@@ -500,6 +501,7 @@ export interface PropostaRequest {
   dataEmissao: string
   validade: string
   observacoes?: string
+  dadosBancarios?: string
   status: StatusProposta
   formaPagamento?: string
   itens: PropostaItemRequest[]
@@ -521,12 +523,15 @@ export interface MesRelatorio {
   mesAno: string
   totalEntradas: number
   recebimentoVendas: number
+  recebimentoLocacoesGeradores: number
   recebimentoBoleto: number
   recebimentoTransferencia: number
   recebimentoPix: number
   outrosRecebimentos: number
   totalSaidas: number
   pagamentosFornecedores: number
+  pagamentosComprasInsumos: number
+  pagamentosLocacoesGeradores: number
   pagamentosDespesasVariaveis: number
   pagamentosImpostos: number
   pagamentosDespesasAdministrativas: number

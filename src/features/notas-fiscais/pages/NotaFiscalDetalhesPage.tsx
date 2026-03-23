@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { NotaFiscal, TipoNotaFiscal } from '@/types'
 import { notaFiscalService } from '@/services/notaFiscalService'
+import { gerarPdfNotaFiscal, imprimirNotaFiscal } from '../utils/notaFiscalPdf'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -182,11 +183,19 @@ export function NotaFiscalDetalhesPage() {
               Gerar Nota de Saída
             </Button>
           )}
-          <Button variant="outline" className="gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => imprimirNotaFiscal(nota)}
+          >
             <Printer className="h-4 w-4" />
             Imprimir
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => gerarPdfNotaFiscal(nota)}
+          >
             <Download className="h-4 w-4" />
             Exportar PDF
           </Button>

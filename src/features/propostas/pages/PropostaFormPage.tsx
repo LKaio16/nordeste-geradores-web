@@ -21,6 +21,7 @@ export function PropostaFormPage() {
     dataEmissao: new Date().toISOString().split('T')[0],
     validade: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias
     observacoes: '',
+    dadosBancarios: '',
     status: StatusProposta.RASCUNHO,
     formaPagamento: '',
     itens: [],
@@ -63,6 +64,7 @@ export function PropostaFormPage() {
         dataEmissao: proposta.dataEmissao.split('T')[0],
         validade: proposta.validade.split('T')[0],
         observacoes: proposta.observacoes || '',
+        dadosBancarios: proposta.dadosBancarios || '',
         status: proposta.status,
         formaPagamento: proposta.formaPagamento || '',
         itens: proposta.itens.map(item => ({
@@ -283,6 +285,18 @@ export function PropostaFormPage() {
             onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
             className="flex min-h-[100px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
             placeholder="Digite as observações da proposta..."
+          />
+        </div>
+
+        {/* Dados bancários */}
+        <div className="space-y-2">
+          <Label htmlFor="dadosBancarios">Dados bancários</Label>
+          <textarea
+            id="dadosBancarios"
+            value={formData.dadosBancarios || ''}
+            onChange={(e) => setFormData({ ...formData, dadosBancarios: e.target.value })}
+            className="flex min-h-[100px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            placeholder="Banco, agência, conta, PIX, etc."
           />
         </div>
 
