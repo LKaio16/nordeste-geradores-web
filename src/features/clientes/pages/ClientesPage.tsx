@@ -28,6 +28,14 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DesktopDataTableShell,
+  STH,
+  listInteractiveRow,
+  paginationBarClass,
+  paginationControlsClass,
+} from '@/components/tables/responsiveDataList'
+import { cn } from '@/components/ui/utils'
 import { maskCPFCNPJ } from '@/utils/validators'
 
 type ViewMode = 'cards' | 'table'
@@ -279,12 +287,14 @@ export function ClientesPage() {
       ) : viewMode === 'table' ? (
         <>
           {/* Informações de Resultado */}
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <div>
+          <div className={cn(paginationBarClass(), 'text-sm text-slate-600')}>
+            <div className="text-center sm:text-left">
               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClientes.length)} de {filteredClientes.length} clientes
             </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="itemsPerPage" className="text-sm">Itens por página:</Label>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+              <Label htmlFor="itemsPerPage" className="text-sm">
+                Itens por página:
+              </Label>
               <select
                 id="itemsPerPage"
                 value={itemsPerPage}
@@ -292,7 +302,7 @@ export function ClientesPage() {
                   setItemsPerPage(Number(e.target.value))
                   setCurrentPage(1)
                 }}
-                className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
+                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
               >
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -302,127 +312,188 @@ export function ClientesPage() {
             </div>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Nome</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">CNPJ</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Telefone</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Cidade/UF</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedClientes.map((cliente) => (
-                    <motion.tr
-                      key={cliente.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => navigate(`/clientes/${cliente.id}`)}
-                    >
-                      <td className="py-3 px-4">
-                        <span className="font-medium">{cliente.nome}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-slate-600">{formatCNPJ(cliente.cnpj)}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{cliente.email}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{cliente.telefone}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">
-                            {cliente.cidade}, {cliente.estado}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {cliente.status === StatusCliente.ATIVO ? (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 w-fit">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Ativo
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 w-fit">
-                            <XCircle className="h-3 w-3" />
-                            Inativo
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/clientes/${cliente.id}`)
-                            }}
-                            className="h-8 w-8"
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/clientes/${cliente.id}/editar`)
-                            }}
-                            className="h-8 w-8"
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(cliente.id)
-                            }}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="space-y-3 md:hidden">
+            {paginatedClientes.map((cliente) => (
+              <motion.div
+                key={cliente.id}
+                role="button"
+                tabIndex={0}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => navigate(`/clientes/${cliente.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/clientes/${cliente.id}`)
+                  }
+                }}
+                className="w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-slate-900">{cliente.nome}</span>
+                      {cliente.status === StatusCliente.ATIVO ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Ativo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200/80">
+                          <XCircle className="h-3 w-3" />
+                          Inativo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm tabular-nums text-slate-600">{formatCNPJ(cliente.cnpj)}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <span className="inline-flex max-w-full items-center gap-1 truncate">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        {cliente.email}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {cliente.telefone}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      <MapPin className="mr-1 inline h-3.5 w-3.5" />
+                      {cliente.cidade}, {cliente.estado}
+                    </p>
+                  </div>
+                  <div
+                    className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/clientes/${cliente.id}`)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50" onClick={() => handleDelete(cliente.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <DesktopDataTableShell tableMinClass="min-w-[56rem]">
+            <thead>
+              <tr>
+                <th className={STH.left}>Nome</th>
+                <th className={STH.mid}>CNPJ</th>
+                <th className={STH.midHiddenLg}>Email</th>
+                <th className={STH.midHiddenLg}>Telefone</th>
+                <th className={STH.mid}>Cidade/UF</th>
+                <th className={STH.mid}>Status</th>
+                <th className={STH.right}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedClientes.map((cliente, index) => (
+                <motion.tr
+                  key={cliente.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className={listInteractiveRow(index)}
+                  onClick={() => navigate(`/clientes/${cliente.id}`)}
+                >
+                  <td className="py-3.5 pl-4 pr-3 align-middle">
+                    <span className="font-semibold text-slate-900">{cliente.nome}</span>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle text-sm tabular-nums text-slate-700">{formatCNPJ(cliente.cnpj)}</td>
+                  <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="line-clamp-2 text-sm text-slate-700">{cliente.email}</span>
+                    </div>
+                  </td>
+                  <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="text-sm text-slate-700">{cliente.telefone}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="text-sm text-slate-700">
+                        {cliente.cidade}, {cliente.estado}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle">
+                    {cliente.status === StatusCliente.ATIVO ? (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                        <XCircle className="h-3 w-3" />
+                        Inativo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-1 py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Visualizar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/clientes/${cliente.id}`)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Editar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/clientes/${cliente.id}/editar`)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                        title="Excluir"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(cliente.id)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </DesktopDataTableShell>
 
         {/* Paginação */}
         {totalPages > 1 && (
           <Card>
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600">
+              <div className={paginationBarClass()}>
+                <div className="text-center text-sm text-slate-600 sm:text-left">
                   Página {currentPage} de {totalPages}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={paginationControlsClass()}>
                   <Button
                     variant="outline"
                     size="sm"

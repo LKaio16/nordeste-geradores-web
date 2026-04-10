@@ -56,8 +56,8 @@ export function EstoqueMovimentacaoPage() {
     try {
       setLoadingEstoques(true)
       const [estoquesData, produtosData] = await Promise.all([
-        estoqueService.listar(),
-        produtoService.listar(),
+        estoqueService.listarTodos(),
+        produtoService.listarTodos(),
       ])
       setEstoques(estoquesData)
       setProdutos(produtosData)

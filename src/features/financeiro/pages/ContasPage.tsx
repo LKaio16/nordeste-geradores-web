@@ -30,6 +30,14 @@ import {
   Clock,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DesktopDataTableShell,
+  STH,
+  listInteractiveRow,
+  paginationBarClass,
+  paginationControlsClass,
+} from '@/components/tables/responsiveDataList'
+import { cn } from '@/components/ui/utils'
 
 type ViewMode = 'cards' | 'table'
 
@@ -528,12 +536,14 @@ export function ContasPage() {
       ) : viewMode === 'table' ? (
         <>
           {/* Informações de Resultado */}
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <div>
+          <div className={cn(paginationBarClass(), 'text-sm text-slate-600')}>
+            <div className="text-center sm:text-left">
               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredContas.length)} de {filteredContas.length} contas
             </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="itemsPerPage" className="text-sm">Itens por página:</Label>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+              <Label htmlFor="itemsPerPage" className="text-sm">
+                Itens por página:
+              </Label>
               <select
                 id="itemsPerPage"
                 value={itemsPerPage}
@@ -541,7 +551,7 @@ export function ContasPage() {
                   setItemsPerPage(Number(e.target.value))
                   setCurrentPage(1)
                 }}
-                className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
+                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
               >
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -551,176 +561,257 @@ export function ContasPage() {
             </div>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Tipo</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Descrição</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Categoria</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Cliente</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Valor</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <span>Vencimento</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={toggleOrdenacaoVencimento}
-                            className="h-6 w-6 p-0 hover:bg-slate-200"
-                            title={
-                              ordenacaoVencimento === null
-                                ? 'Ordenar por vencimento'
-                                : ordenacaoVencimento === 'asc'
-                                ? 'Ordenação: Crescente (clique para decrescente)'
-                                : 'Ordenação: Decrescente (clique para remover)'
-                            }
-                          >
-                            {ordenacaoVencimento === null ? (
-                              <ArrowUp className="h-3 w-3 text-slate-400" />
-                            ) : ordenacaoVencimento === 'asc' ? (
-                              <ArrowUp className="h-3 w-3 text-blue-600" />
-                            ) : (
-                              <ArrowDown className="h-3 w-3 text-blue-600" />
-                            )}
-                          </Button>
-                        </div>
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedContas.map((conta) => {
-                    const vencida = isVencida(conta.dataVencimento, conta.status)
-                    return (
-                      <motion.tr
-                        key={conta.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer ${vencida ? 'bg-red-50/50' : ''}`}
-                        onClick={() => navigate(`/contas/${conta.id}`)}
-                      >
-                        <td className="py-3 px-4">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                              conta.tipo === TipoConta.PAGAR
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-green-100 text-green-700'
-                            }`}
-                          >
-                            {conta.tipo === TipoConta.PAGAR ? 'Pagar' : 'Receber'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-medium">{conta.descricao}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-sm text-slate-600">{conta.categoria || 'Geral'}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {conta.cliente ? (
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-slate-400" />
-                              <span className="text-sm text-slate-600">{conta.cliente.nome}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-slate-400">-</span>
+          <div className="space-y-3 md:hidden">
+            {paginatedContas.map((conta) => {
+              const vencida = isVencida(conta.dataVencimento, conta.status)
+              return (
+                <motion.div
+                  key={conta.id}
+                  role="button"
+                  tabIndex={0}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => navigate(`/contas/${conta.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      navigate(`/contas/${conta.id}`)
+                    }
+                  }}
+                  className={cn(
+                    'w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]',
+                    vencida && 'border-red-200/80 bg-red-50/40'
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-xs font-semibold',
+                            conta.tipo === TipoConta.PAGAR ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
                           )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-slate-400" />
-                            <span className="font-semibold">{formatCurrency(conta.valor)}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            <span className={`text-sm ${vencida ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
-                              {formatDate(conta.dataVencimento)}
-                            </span>
-                          </div>
-                        </td>
-                      <td className="py-3 px-4">
+                        >
+                          {conta.tipo === TipoConta.PAGAR ? 'Pagar' : 'Receber'}
+                        </span>
                         {conta.status === StatusConta.PAGO ? (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 w-fit">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
                             <CheckCircle2 className="h-3 w-3" />
                             Pago
                           </span>
                         ) : conta.status === StatusConta.VENCIDO || vencida ? (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 w-fit">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">
                             <AlertCircle className="h-3 w-3" />
                             Vencido
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 w-fit">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
                             <AlertCircle className="h-3 w-3" />
                             Pendente
                           </span>
                         )}
-                      </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/contas/${conta.id}`)
-                              }}
-                              className="h-8 w-8"
-                              title="Visualizar"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/contas/${conta.id}/editar`)
-                              }}
-                              className="h-8 w-8"
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(conta.id)
-                              }}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                      </div>
+                      <p className="font-semibold text-slate-900">{conta.descricao}</p>
+                      <p className="text-xs text-slate-600">Categoria: {conta.categoria || 'Geral'}</p>
+                      {conta.cliente ? (
+                        <p className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          {conta.cliente.nome}
+                        </p>
+                      ) : null}
+                      <p className="text-sm font-semibold tabular-nums text-slate-900">{formatCurrency(conta.valor)}</p>
+                      <p className={cn('text-xs tabular-nums', vencida ? 'font-semibold text-red-700' : 'text-slate-600')}>
+                        Vence {formatDate(conta.dataVencimento)}
+                      </p>
+                    </div>
+                    <div
+                      className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/contas/${conta.id}`)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/contas/${conta.id}/editar`)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50" onClick={() => handleDelete(conta.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+
+          <DesktopDataTableShell tableMinClass="min-w-[64rem]">
+            <thead>
+              <tr>
+                <th className={STH.mid}>Tipo</th>
+                <th className={STH.left}>Descrição</th>
+                <th className={STH.midHiddenLg}>Categoria</th>
+                <th className={STH.midHiddenLg}>Cliente</th>
+                <th className={STH.midNum}>Valor</th>
+                <th className={STH.mid}>
+                  <div className="flex items-center gap-1.5">
+                    <span>Vencimento</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleOrdenacaoVencimento()
+                      }}
+                      className="h-7 w-7 shrink-0 touch-manipulation p-0 hover:bg-slate-200/80"
+                      title={
+                        ordenacaoVencimento === null
+                          ? 'Ordenar por vencimento'
+                          : ordenacaoVencimento === 'asc'
+                            ? 'Ordenação: Crescente (clique para decrescente)'
+                            : 'Ordenação: Decrescente (clique para remover)'
+                      }
+                    >
+                      {ordenacaoVencimento === null ? (
+                        <ArrowUp className="h-3.5 w-3.5 text-slate-400" />
+                      ) : ordenacaoVencimento === 'asc' ? (
+                        <ArrowUp className="h-3.5 w-3.5 text-blue-600" />
+                      ) : (
+                        <ArrowDown className="h-3.5 w-3.5 text-blue-600" />
+                      )}
+                    </Button>
+                  </div>
+                </th>
+                <th className={STH.mid}>Status</th>
+                <th className={STH.right}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedContas.map((conta, index) => {
+                const vencida = isVencida(conta.dataVencimento, conta.status)
+                return (
+                  <motion.tr
+                    key={conta.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className={cn(listInteractiveRow(index), vencida && '!bg-red-50/60')}
+                    onClick={() => navigate(`/contas/${conta.id}`)}
+                  >
+                    <td className="px-3 py-3.5 align-middle">
+                      <span
+                        className={cn(
+                          'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
+                          conta.tipo === TipoConta.PAGAR ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                        )}
+                      >
+                        {conta.tipo === TipoConta.PAGAR ? 'Pagar' : 'Receber'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 pl-4 pr-3 align-middle">
+                      <span className="font-semibold text-slate-900">{conta.descricao}</span>
+                    </td>
+                    <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                      <span className="text-sm text-slate-700">{conta.categoria || 'Geral'}</span>
+                    </td>
+                    <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                      {conta.cliente ? (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 shrink-0 text-slate-400" />
+                          <span className="line-clamp-2 text-sm text-slate-700">{conta.cliente.nome}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3.5 text-right align-middle tabular-nums">
+                      <div className="flex items-center justify-end gap-2">
+                        <DollarSign className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span className="font-semibold text-slate-900">{formatCurrency(conta.valor)}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3.5 align-middle">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span className={cn('text-sm tabular-nums', vencida ? 'font-semibold text-red-700' : 'text-slate-700')}>
+                          {formatDate(conta.dataVencimento)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3.5 align-middle">
+                      {conta.status === StatusConta.PAGO ? (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Pago
+                        </span>
+                      ) : conta.status === StatusConta.VENCIDO || vencida ? (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs text-red-800">
+                          <AlertCircle className="h-3 w-3" />
+                          Vencido
+                        </span>
+                      ) : (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
+                          <AlertCircle className="h-3 w-3" />
+                          Pendente
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-1 py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation"
+                          title="Visualizar"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/contas/${conta.id}`)
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation"
+                          title="Editar"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/contas/${conta.id}/editar`)
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                          title="Excluir"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(conta.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                )
+              })}
+            </tbody>
+          </DesktopDataTableShell>
 
         {/* Paginação */}
         {totalPages > 1 && (
           <Card>
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600">
+              <div className={paginationBarClass()}>
+                <div className="text-center text-sm text-slate-600 sm:text-left">
                   Página {currentPage} de {totalPages}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={paginationControlsClass()}>
                   <Button
                     variant="outline"
                     size="sm"

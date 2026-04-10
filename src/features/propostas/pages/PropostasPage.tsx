@@ -23,12 +23,23 @@ import {
   Table as TableIcon,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import {
+  DesktopDataTableShell,
+  STH,
+  listInteractiveRow,
+  paginationBarClass,
+  paginationControlsClass,
+} from '@/components/tables/responsiveDataList'
 
 type ViewMode = 'cards' | 'table'
 
 export function PropostasPage() {
   const navigate = useNavigate()
   const [propostas, setPropostas] = useState<Proposta[]>([])
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusProposta | ''>('')
@@ -37,13 +48,15 @@ export function PropostasPage() {
 
   useEffect(() => {
     carregarPropostas()
-  }, [])
+  }, [page, size, searchTerm, statusFilter, tipoFilter])
 
   const carregarPropostas = async () => {
     try {
       setLoading(true)
-      const data = await propostaService.listar()
-      setPropostas(data)
+      const data = await propostaService.listar({ page, size, q: searchTerm, status: statusFilter, tipo: tipoFilter })
+      setPropostas(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar propostas:', err)
     } finally {
@@ -105,17 +118,7 @@ export function PropostasPage() {
     return new Date(date).toLocaleDateString('pt-BR')
   }
 
-  const filteredPropostas = propostas.filter((proposta) => {
-    const matchesSearch =
-      proposta.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proposta.cliente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proposta.cliente?.cnpj.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = !statusFilter || proposta.status === statusFilter
-    const matchesTipo = !tipoFilter || proposta.tipo === tipoFilter
-
-    return matchesSearch && matchesStatus && matchesTipo
-  })
+  const filteredPropostas = propostas
 
   if (loading) {
     return (
@@ -149,13 +152,19 @@ export function PropostasPage() {
           <Input
             placeholder="Buscar por número, cliente ou CNPJ..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setPage(0)
+              setSearchTerm(e.target.value)
+            }}
             className="pl-10"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as StatusProposta | '')}
+          onChange={(e) => {
+            setPage(0)
+            setStatusFilter(e.target.value as StatusProposta | '')
+          }}
           className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
         >
           <option value="">Todos os Status</option>
@@ -166,7 +175,10 @@ export function PropostasPage() {
         </select>
         <select
           value={tipoFilter}
-          onChange={(e) => setTipoFilter(e.target.value as TipoProposta | '')}
+          onChange={(e) => {
+            setPage(0)
+            setTipoFilter(e.target.value as TipoProposta | '')
+          }}
           className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
         >
           <option value="">Todos os Tipos</option>
@@ -237,7 +249,7 @@ export function PropostasPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-slate-600">
                         <User className="h-4 w-4 text-slate-400" />
-                        <span>{proposta.cliente?.nome || 'Cliente não informado'}</span>
+                        <span>{proposta.cliente?.nome || proposta.clienteNome || '—'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="h-4 w-4 text-slate-400" />
@@ -298,116 +310,213 @@ export function PropostasPage() {
           })}
         </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Número</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Tipo</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Data Emissão</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Validade</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Valor Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {filteredPropostas.map((proposta) => {
-                    const statusInfo = formatStatus(proposta.status)
-                    return (
-                      <motion.tr
-                        key={proposta.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="hover:bg-slate-50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/propostas/${proposta.id}`)}
+        <>
+          <div className="space-y-3 md:hidden">
+            {filteredPropostas.map((proposta) => {
+              const statusInfo = formatStatus(proposta.status)
+              return (
+                <motion.div
+                  key={proposta.id}
+                  role="button"
+                  tabIndex={0}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => navigate(`/propostas/${proposta.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      navigate(`/propostas/${proposta.id}`)
+                    }
+                  }}
+                  className="w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold tabular-nums text-slate-900">{proposta.numero}</span>
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 text-sm text-slate-700">
+                        {proposta.cliente?.nome || proposta.clienteNome || '—'}
+                      </p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                        <span>{formatTipo(proposta.tipo)}</span>
+                        <span>Emissão {formatDate(proposta.dataEmissao)}</span>
+                        <span>Val. {formatDate(proposta.validade)}</span>
+                      </div>
+                      <p className="text-base font-bold tabular-nums text-emerald-700">
+                        R${' '}
+                        {proposta.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div
+                      className="flex w-full flex-wrap justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/propostas/${proposta.id}`)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" title="PDF" onClick={() => handleGerarPdf(proposta.id)}>
+                        <FileDown className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/propostas/${proposta.id}/editar`)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50"
+                        onClick={() => handleDelete(proposta.id)}
                       >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900">{proposta.numero}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-slate-900">{proposta.cliente?.nome || 'N/A'}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-slate-600">{formatTipo(proposta.tipo)}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-slate-600">{formatDate(proposta.dataEmissao)}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-slate-600">{formatDate(proposta.validade)}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-900">
-                            R$ {proposta.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/propostas/${proposta.id}`)
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleGerarPdf(proposta.id)
-                              }}
-                              className="h-8 w-8 p-0"
-                              title="Gerar PDF"
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/propostas/${proposta.id}/editar`)
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(proposta.id)
-                              }}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+
+          <DesktopDataTableShell tableMinClass="min-w-[64rem]">
+            <thead>
+              <tr>
+                <th className={STH.left}>Número</th>
+                <th className={STH.mid}>Cliente</th>
+                <th className={STH.mid}>Tipo</th>
+                <th className={STH.midHiddenLg}>Emissão</th>
+                <th className={STH.midHiddenLg}>Validade</th>
+                <th className={STH.midNum}>Valor</th>
+                <th className={STH.mid}>Status</th>
+                <th className={STH.right}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredPropostas.map((proposta, index) => {
+                const statusInfo = formatStatus(proposta.status)
+                return (
+                  <motion.tr
+                    key={proposta.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={listInteractiveRow(index)}
+                    onClick={() => navigate(`/propostas/${proposta.id}`)}
+                  >
+                    <td className="py-3.5 pl-4 pr-3 align-middle font-semibold tabular-nums text-slate-900">{proposta.numero}</td>
+                    <td className="max-w-[14rem] px-3 py-3.5 align-middle">
+                      <span className="line-clamp-2 text-sm text-slate-800" title={proposta.cliente?.nome || proposta.clienteNome || ''}>
+                        {proposta.cliente?.nome || proposta.clienteNome || '—'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3.5 align-middle text-sm text-slate-600">{formatTipo(proposta.tipo)}</td>
+                    <td className="hidden whitespace-nowrap px-3 py-3.5 align-middle tabular-nums text-sm text-slate-600 lg:table-cell">
+                      {formatDate(proposta.dataEmissao)}
+                    </td>
+                    <td className="hidden whitespace-nowrap px-3 py-3.5 align-middle tabular-nums text-sm text-slate-600 lg:table-cell">
+                      {formatDate(proposta.validade)}
+                    </td>
+                    <td className="px-3 py-3.5 text-right align-middle text-sm font-semibold tabular-nums text-slate-900">
+                      R${' '}
+                      {proposta.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-3 py-3.5 align-middle">
+                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
+                    </td>
+                    <td className="px-1 py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/propostas/${proposta.id}`)
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation"
+                          title="Gerar PDF"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleGerarPdf(proposta.id)
+                          }}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/propostas/${proposta.id}/editar`)
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(proposta.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                )
+              })}
+            </tbody>
+          </DesktopDataTableShell>
+        </>
       )}
+
+      {/* Paginação */}
+      <div className={paginationBarClass()}>
+        <div className="text-center text-sm text-slate-600 sm:text-left">
+          Total: <span className="font-semibold text-slate-900">{totalElements}</span>
+        </div>
+        <div className={paginationControlsClass()}>
+          <select
+            value={size}
+            onChange={(e) => {
+              setPage(0)
+              setSize(parseInt(e.target.value) || 20)
+            }}
+            className="flex h-9 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+          >
+            <option value="10">10 / pág</option>
+            <option value="20">20 / pág</option>
+            <option value="50">50 / pág</option>
+            <option value="100">100 / pág</option>
+          </select>
+          <Button variant="outline" size="sm" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            Anterior
+          </Button>
+          <div className="text-sm text-slate-700">
+            Página <span className="font-semibold">{totalPages === 0 ? 0 : page + 1}</span> de{' '}
+            <span className="font-semibold">{totalPages}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Próxima
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -122,7 +122,7 @@ export function ContaFormPage() {
 
   const carregarFornecedores = async () => {
     try {
-      const data = await fornecedorService.listar()
+      const data = await fornecedorService.listarTodos()
       setFornecedores(data.filter((f) => f.status === 'ATIVO'))
     } catch (err: any) {
       console.error('Erro ao carregar fornecedores:', err)

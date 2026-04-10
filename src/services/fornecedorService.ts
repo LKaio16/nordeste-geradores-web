@@ -1,4 +1,4 @@
-import { Fornecedor, FornecedorRequest } from '@/types'
+import { Fornecedor, FornecedorRequest, PageResponse, StatusFornecedor } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 // Função auxiliar para formatar fornecedor da resposta
@@ -20,12 +20,49 @@ function formatFornecedorFromResponse(fornecedor: any): Fornecedor {
 }
 
 class FornecedorService {
-  async listar(): Promise<Fornecedor[]> {
+  /** Lista completa (selects em formulários). Usa `GET /api/fornecedores/all`. */
+  async listarTodos(): Promise<Fornecedor[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.fornecedores.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.fornecedores.all)
       return response.data.map(formatFornecedorFromResponse)
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar fornecedores')
+    }
+  }
+
+  /** Lista paginada com busca e filtros. */
+  async listarPagina(params?: {
+    page?: number
+    size?: number
+    q?: string
+    status?: StatusFornecedor | ''
+    estado?: string
+  }): Promise<PageResponse<Fornecedor>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.fornecedores.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+          estado: params?.estado || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatFornecedorFromResponse),
+      }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar fornecedores')
+    }
+  }
+
+  async listarEstados(): Promise<string[]> {
+    try {
+      const response = await api.get<string[]>(API_ENDPOINTS.fornecedores.estados)
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar UFs')
     }
   }
 
@@ -68,4 +105,3 @@ class FornecedorService {
 }
 
 export const fornecedorService = new FornecedorService()
-

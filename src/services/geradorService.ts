@@ -1,4 +1,4 @@
-import { Gerador, GeradorRequest, GeradorAuditoria } from '@/types'
+import { Gerador, GeradorRequest, GeradorAuditoria, PageResponse, StatusGerador } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 function formatGeradorFromResponse(gerador: any): Gerador {
@@ -19,10 +19,30 @@ function formatGeradorFromResponse(gerador: any): Gerador {
 }
 
 class GeradorService {
-  async listar(): Promise<Gerador[]> {
+  /** Lista completa (dashboard, selects em formulários). */
+  async listarTodos(): Promise<Gerador[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.geradores.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.geradores.all)
       return response.data.map(formatGeradorFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar geradores')
+    }
+  }
+
+  async listar(params?: { page?: number; size?: number; q?: string; status?: StatusGerador | '' }): Promise<PageResponse<Gerador>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.geradores.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatGeradorFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar geradores')
     }

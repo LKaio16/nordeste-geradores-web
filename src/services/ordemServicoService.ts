@@ -1,4 +1,12 @@
-import { OrdemServico, OrdemServicoRequest } from '@/types'
+import {
+  OrdemServico,
+  OrdemServicoFoto,
+  OrdemServicoRequest,
+  PageResponse,
+  StatusOrdemServico,
+  TipoFoto,
+  TipoOrdemServico,
+} from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 function formatOrdemServicoFromResponse(os: any): OrdemServico {
@@ -60,17 +68,47 @@ function formatOrdemServicoFromResponse(os: any): OrdemServico {
       createdAt: os.tecnicoResponsavel.createdAt ? (typeof os.tecnicoResponsavel.createdAt === 'string' ? os.tecnicoResponsavel.createdAt : os.tecnicoResponsavel.createdAt.toString()) : new Date().toISOString(),
       updatedAt: os.tecnicoResponsavel.updatedAt ? (typeof os.tecnicoResponsavel.updatedAt === 'string' ? os.tecnicoResponsavel.updatedAt : os.tecnicoResponsavel.updatedAt.toString()) : new Date().toISOString(),
     } : undefined,
-    fotos: os.fotos || [],
+    fotos: (os.fotos || []).map((f: any) => ({
+      id: String(f.id),
+      ordemServicoId: String(os.id),
+      url: f.url || '',
+      tipo: f.tipo,
+      descricao: f.descricao ?? undefined,
+      createdAt: f.createdAt
+        ? typeof f.createdAt === 'string'
+          ? f.createdAt
+          : new Date(f.createdAt).toISOString()
+        : new Date().toISOString(),
+    })),
     createdAt: os.createdAt ? (typeof os.createdAt === 'string' ? os.createdAt : os.createdAt.toString()) : new Date().toISOString(),
     updatedAt: os.updatedAt ? (typeof os.updatedAt === 'string' ? os.updatedAt : os.updatedAt.toString()) : new Date().toISOString(),
   }
 }
 
 class OrdemServicoService {
-  async listar(): Promise<OrdemServico[]> {
+  async listar(params?: {
+    page?: number
+    size?: number
+    q?: string
+    status?: StatusOrdemServico | ''
+    tipo?: TipoOrdemServico | ''
+    locacaoId?: string
+  }): Promise<PageResponse<OrdemServico>> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.ordensServico.list)
-      return response.data.map(formatOrdemServicoFromResponse)
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.ordensServico.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+          tipo: params?.tipo || undefined,
+          locacaoId: params?.locacaoId || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatOrdemServicoFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar ordens de serviço')
     }
@@ -126,6 +164,71 @@ class OrdemServicoService {
       await api.delete(API_ENDPOINTS.ordensServico.delete(id))
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao deletar ordem de serviço')
+    }
+  }
+
+  async enviarFoto(ordemServicoId: string, file: File, tipo: TipoFoto, descricao?: string): Promise<OrdemServicoFoto> {
+    try {
+      const form = new FormData()
+      form.append('tipo', tipo)
+      if (descricao?.trim()) {
+        form.append('descricao', descricao.trim())
+      }
+      form.append('file', file)
+      const response = await api.post<any>(API_ENDPOINTS.ordensServico.uploadFoto(ordemServicoId), form, {
+        timeout: 120000,
+      })
+      const d = response.data
+      return {
+        id: String(d.id),
+        ordemServicoId,
+        url: d.url || '',
+        tipo: d.tipo,
+        descricao: d.descricao ?? undefined,
+        createdAt: d.createdAt
+          ? typeof d.createdAt === 'string'
+            ? d.createdAt
+            : new Date(d.createdAt).toISOString()
+          : new Date().toISOString(),
+      }
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        'Erro ao enviar foto'
+      throw new Error(msg)
+    }
+  }
+
+  async excluirFoto(ordemServicoId: string, fotoId: string): Promise<void> {
+    try {
+      await api.delete(API_ENDPOINTS.ordensServico.deleteFoto(ordemServicoId, fotoId))
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao excluir foto')
+    }
+  }
+
+  async atualizarFotoMeta(ordemServicoId: string, fotoId: string, descricao: string, tipo: TipoFoto): Promise<OrdemServicoFoto> {
+    try {
+      const response = await api.patch<any>(API_ENDPOINTS.ordensServico.patchFoto(ordemServicoId, fotoId), {
+        descricao,
+        tipo,
+      })
+      const d = response.data
+      return {
+        id: String(d.id),
+        ordemServicoId,
+        url: d.url || '',
+        tipo: d.tipo,
+        descricao: d.descricao ?? undefined,
+        createdAt: d.createdAt
+          ? typeof d.createdAt === 'string'
+            ? d.createdAt
+            : new Date(d.createdAt).toISOString()
+          : new Date().toISOString(),
+      }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao atualizar foto')
     }
   }
 }

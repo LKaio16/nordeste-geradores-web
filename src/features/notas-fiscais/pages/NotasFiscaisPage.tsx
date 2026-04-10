@@ -55,7 +55,7 @@ export function NotasFiscaisPage() {
 
   const carregarFornecedores = async () => {
     try {
-      const data = await fornecedorService.listar()
+      const data = await fornecedorService.listarTodos()
       setFornecedores(data.filter(f => f.status === 'ATIVO'))
     } catch (err: any) {
       console.error('Erro ao carregar fornecedores:', err)
@@ -95,6 +95,50 @@ export function NotasFiscaisPage() {
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR')
   }
+
+  const formaPagamentoLabel = (fp?: FormaPagamento | null) =>
+    fp ? fp.replace(/_/g, ' ') : '—'
+
+  const RowActions = ({ notaId }: { notaId: string }) => (
+    <div className="flex items-center justify-end gap-0.5 sm:justify-center">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation()
+          navigate(`/notas-entrada/${notaId}`)
+        }}
+        className="h-9 w-9 shrink-0 touch-manipulation"
+        title="Visualizar"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation()
+          navigate(`/notas-entrada/${notaId}/editar`)
+        }}
+        className="h-9 w-9 shrink-0 touch-manipulation"
+        title="Editar"
+      >
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation()
+          handleDelete(notaId)
+        }}
+        className="h-9 w-9 shrink-0 touch-manipulation text-red-600 hover:text-red-700 hover:bg-red-50"
+        title="Excluir"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  )
 
   const filteredNotas = notas
     .filter((nota) => {
@@ -399,116 +443,159 @@ export function NotasFiscaisPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Número</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Tipo</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Fornecedor</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Data Emissão</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Pagamento</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700">Itens</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700">Total</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedNotas.map((nota) => (
-                    <motion.tr
-                      key={nota.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => navigate(`/notas-entrada/${nota.id}`)}
-                    >
-                      <td className="py-3 px-4">
-                        <span className="font-medium">#{nota.numeroNota}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            nota.tipo === TipoNotaFiscal.ENTRADA
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-purple-100 text-purple-700'
+        <>
+          {/* Lista em cartões — telas pequenas (tabela larga demais) */}
+          <div className="space-y-3 md:hidden">
+            {paginatedNotas.map((nota) => (
+              <motion.div
+                key={nota.id}
+                role="button"
+                tabIndex={0}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => navigate(`/notas-entrada/${nota.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/notas-entrada/${nota.id}`)
+                  }
+                }}
+                className="w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold tabular-nums text-slate-900">#{nota.numeroNota}</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          nota.tipo === TipoNotaFiscal.ENTRADA
+                            ? 'bg-sky-100 text-sky-800 ring-1 ring-sky-200/80'
+                            : 'bg-violet-100 text-violet-800 ring-1 ring-violet-200/80'
+                        }`}
+                      >
+                        {nota.tipo === TipoNotaFiscal.ENTRADA ? 'Entrada' : 'Saída'}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-sm leading-snug text-slate-700">{nota.fornecedor}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />
+                        {formatDate(nota.dataEmissao)}
+                      </span>
+                      <span className="tabular-nums">{nota.itens.length} itens</span>
+                      <span className="max-w-[10rem] truncate sm:max-w-none">{formaPagamentoLabel(nota.formaPagamento)}</span>
+                    </div>
+                  </div>
+                  <div className="flex w-full flex-col items-stretch gap-3 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0">
+                    <p className="text-right text-lg font-bold tabular-nums text-emerald-700 sm:text-right">
+                      {formatCurrency(nota.valorTotal)}
+                    </p>
+                    <RowActions notaId={nota.id} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Tabela — md+ */}
+          <Card className="hidden overflow-hidden border-slate-200/90 shadow-sm md:block">
+            <CardContent className="p-0">
+              <div className="relative">
+                <div className="overflow-x-auto overscroll-x-contain">
+                  <table className="w-full min-w-[52rem] border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-100/95 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                        <th className="sticky top-0 z-10 bg-slate-100/95 py-3.5 pl-4 pr-3 backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Número
+                        </th>
+                        <th className="sticky top-0 z-10 bg-slate-100/95 py-3.5 px-3 backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Tipo
+                        </th>
+                        <th className="sticky top-0 z-10 min-w-[12rem] max-w-[20rem] bg-slate-100/95 py-3.5 px-3 backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Fornecedor / Cliente
+                        </th>
+                        <th className="sticky top-0 z-10 whitespace-nowrap bg-slate-100/95 py-3.5 px-3 backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Emissão
+                        </th>
+                        <th className="sticky top-0 z-10 hidden bg-slate-100/95 py-3.5 px-3 backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80 lg:table-cell">
+                          Pagamento
+                        </th>
+                        <th className="sticky top-0 z-10 bg-slate-100/95 py-3.5 px-3 text-right tabular-nums backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Itens
+                        </th>
+                        <th className="sticky top-0 z-10 bg-slate-100/95 py-3.5 pl-3 pr-4 text-right tabular-nums backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Total
+                        </th>
+                        <th className="sticky top-0 z-10 w-[7.5rem] bg-slate-100/95 py-3.5 px-2 text-center backdrop-blur-sm supports-[backdrop-filter]:bg-slate-100/80">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {paginatedNotas.map((nota, index) => (
+                        <motion.tr
+                          key={nota.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.15 }}
+                          className={`cursor-pointer transition-colors hover:bg-[#203d7b]/[0.04] ${
+                            index % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
                           }`}
+                          onClick={() => navigate(`/notas-entrada/${nota.id}`)}
                         >
-                          {nota.tipo === TipoNotaFiscal.ENTRADA ? 'Entrada' : 'Saída'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Receipt className="h-4 w-4 text-slate-400" />
-                          <span className="truncate max-w-xs">{nota.fornecedor}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-slate-400" />
-                          <span>{formatDate(nota.dataEmissao)}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm">{nota.formaPagamento ? nota.formaPagamento.replace('_', ' ') : '-'}</span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="text-sm">{nota.itens.length}</span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="font-semibold text-emerald-600">
-                          {formatCurrency(nota.valorTotal)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/notas-entrada/${nota.id}`)
-                            }}
-                            className="h-8 w-8"
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/notas-entrada/${nota.id}/editar`)
-                            }}
-                            className="h-8 w-8"
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(nota.id)
-                            }}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                          <td className="py-3.5 pl-4 pr-3 align-middle">
+                            <span className="font-semibold tabular-nums text-slate-900">#{nota.numeroNota}</span>
+                          </td>
+                          <td className="px-3 py-3.5 align-middle">
+                            <span
+                              className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                nota.tipo === TipoNotaFiscal.ENTRADA
+                                  ? 'bg-sky-100 text-sky-800 ring-1 ring-sky-200/70'
+                                  : 'bg-violet-100 text-violet-800 ring-1 ring-violet-200/70'
+                              }`}
+                            >
+                              {nota.tipo === TipoNotaFiscal.ENTRADA ? 'Entrada' : 'Saída'}
+                            </span>
+                          </td>
+                          <td className="max-w-[20rem] px-3 py-3.5 align-middle">
+                            <div className="flex items-start gap-2">
+                              <Receipt className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                              <span className="line-clamp-2 leading-snug text-slate-800" title={nota.fornecedor}>
+                                {nota.fornecedor}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3.5 align-middle tabular-nums text-slate-700">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                              {formatDate(nota.dataEmissao)}
+                            </span>
+                          </td>
+                          <td className="hidden px-3 py-3.5 align-middle text-slate-700 lg:table-cell">
+                            <span className="line-clamp-2 text-sm leading-snug" title={formaPagamentoLabel(nota.formaPagamento)}>
+                              {formaPagamentoLabel(nota.formaPagamento)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3.5 text-right align-middle tabular-nums text-slate-700">{nota.itens.length}</td>
+                          <td className="py-3.5 pl-3 pr-4 text-right align-middle">
+                            <span className="font-semibold tabular-nums text-emerald-700">{formatCurrency(nota.valorTotal)}</span>
+                          </td>
+                          <td className="px-1 py-2 align-middle" onClick={(e) => e.stopPropagation()}>
+                            <RowActions notaId={nota.id} />
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="hidden border-t border-slate-100 bg-sky-50/60 px-4 py-2 text-center text-xs text-sky-900/80 md:block xl:hidden">
+                  Dica: deslize a tabela para a lateral para ver todas as colunas (pagamento, totais).
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <div className="space-y-4">
                   {paginatedNotas.map((nota) => (
@@ -608,11 +695,11 @@ export function NotasFiscaisPage() {
       {filteredNotas.length > 0 && (
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-600">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-center text-sm text-slate-600 sm:text-left">
                 Mostrando {startIndex + 1} a {Math.min(endIndex, filteredNotas.length)} de {filteredNotas.length} notas
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button
                   variant="outline"
                   size="sm"

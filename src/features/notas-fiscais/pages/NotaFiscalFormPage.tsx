@@ -186,7 +186,7 @@ export function NotaFiscalFormPage() {
   const carregarFornecedores = async () => {
     try {
       setLoadingFornecedores(true)
-      const data = await fornecedorService.listar()
+      const data = await fornecedorService.listarTodos()
       setFornecedores(data.filter(f => f.status === 'ATIVO'))
     } catch (err: any) {
       console.error('Erro ao carregar fornecedores:', err)
@@ -211,7 +211,7 @@ export function NotaFiscalFormPage() {
     try {
       setLoadingProdutos(true)
       const [produtosData, categoriasData] = await Promise.all([
-        produtoService.listar(),
+        produtoService.listarTodos(),
         produtoService.listarCategorias(),
       ])
       setProdutos(produtosData)

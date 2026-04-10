@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Proposta, TipoProposta, StatusProposta, CategoriaPropostaItem } from '@/types'
+import { isCategoriaPreset } from '@/utils/propostaCategoriasCustom'
 import { propostaService } from '@/services/propostaService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -80,14 +81,19 @@ export function PropostaDetalhesPage() {
     return tipoMap[tipo] || tipo
   }
 
-  const formatCategoria = (categoria: CategoriaPropostaItem) => {
-    const categoriaMap: Record<CategoriaPropostaItem, string> = {
-      [CategoriaPropostaItem.GERADOR]: 'Gerador',
-      [CategoriaPropostaItem.CABOS]: 'Cabos',
-      [CategoriaPropostaItem.FRETE]: 'Frete',
-      [CategoriaPropostaItem.SERVICO]: 'Serviço',
+  const formatCategoria = (categoria: string) => {
+    const c = (categoria || '').trim()
+    if (!c) return '—'
+    if (isCategoriaPreset(c)) {
+      const categoriaMap: Record<CategoriaPropostaItem, string> = {
+        [CategoriaPropostaItem.GERADOR]: 'Gerador',
+        [CategoriaPropostaItem.CABOS]: 'Cabos',
+        [CategoriaPropostaItem.FRETE]: 'Frete',
+        [CategoriaPropostaItem.SERVICO]: 'Serviço',
+      }
+      return categoriaMap[c as CategoriaPropostaItem] || c
     }
-    return categoriaMap[categoria] || categoria
+    return c
   }
 
   const formatDate = (date: string) => {
@@ -267,7 +273,11 @@ export function PropostaDetalhesPage() {
                 )}
               </div>
             ) : (
-              <p className="text-slate-400 italic text-center py-4">Cliente não informado</p>
+              <div className="text-center py-4">
+                <p className="text-slate-400 italic">
+                  {proposta.clienteNome ? `Cliente: ${proposta.clienteNome}` : 'Cliente não informado'}
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>

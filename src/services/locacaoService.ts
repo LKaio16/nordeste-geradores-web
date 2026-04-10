@@ -1,4 +1,4 @@
-import { Locacao, LocacaoRequest } from '@/types'
+import { Locacao, LocacaoRequest, PageResponse, StatusLocacao, TipoLocacao } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 function formatLocacaoFromResponse(locacao: any): Locacao {
@@ -48,10 +48,21 @@ function formatLocacaoFromResponse(locacao: any): Locacao {
 }
 
 class LocacaoService {
-  async listar(): Promise<Locacao[]> {
+  async listar(params?: { page?: number; size?: number; q?: string; status?: StatusLocacao | ''; tipo?: TipoLocacao | '' }): Promise<PageResponse<Locacao>> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.locacoes.list)
-      return response.data.map(formatLocacaoFromResponse)
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.locacoes.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+          tipo: params?.tipo || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatLocacaoFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar locações')
     }
@@ -98,6 +109,18 @@ class LocacaoService {
       await api.delete(API_ENDPOINTS.locacoes.delete(id))
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao deletar locação')
+    }
+  }
+
+  async gerarPdfRelatorio(id: string): Promise<Blob> {
+    try {
+      const response = await api.get(API_ENDPOINTS.locacoes.pdf(id), {
+        responseType: 'blob',
+        timeout: 120000,
+      })
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao gerar PDF da locação')
     }
   }
 }

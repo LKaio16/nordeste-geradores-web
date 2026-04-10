@@ -40,10 +40,13 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    // Garantir que os headers do ngrok estão sempre presentes
     if (config.headers) {
       config.headers['ngrok-skip-browser-warning'] = 'true'
-      config.headers['Accept'] = 'application/json'
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type']
+      } else {
+        config.headers['Accept'] = 'application/json'
+      }
     }
     return config
   },
@@ -181,6 +184,8 @@ export const API_ENDPOINTS = {
   },
   fornecedores: {
     list: '/api/fornecedores',
+    all: '/api/fornecedores/all',
+    estados: '/api/fornecedores/estados',
     get: (id: string) => `/api/fornecedores/${id}`,
     create: '/api/fornecedores',
     update: (id: string) => `/api/fornecedores/${id}`,
@@ -188,6 +193,7 @@ export const API_ENDPOINTS = {
   },
   geradores: {
     list: '/api/geradores',
+    all: '/api/geradores/all',
     get: (id: string) => `/api/geradores/${id}`,
     create: '/api/geradores',
     update: (id: string) => `/api/geradores/${id}`,
@@ -202,6 +208,7 @@ export const API_ENDPOINTS = {
     create: '/api/locacoes',
     update: (id: string) => `/api/locacoes/${id}`,
     delete: (id: string) => `/api/locacoes/${id}`,
+    pdf: (id: string) => `/api/locacoes/${id}/pdf`,
   },
   ordensServico: {
     list: '/api/ordens-servico',
@@ -209,6 +216,9 @@ export const API_ENDPOINTS = {
     create: '/api/ordens-servico',
     update: (id: string) => `/api/ordens-servico/${id}`,
     delete: (id: string) => `/api/ordens-servico/${id}`,
+    uploadFoto: (id: string) => `/api/ordens-servico/${id}/fotos`,
+    patchFoto: (osId: string, fotoId: string) => `/api/ordens-servico/${osId}/fotos/${fotoId}`,
+    deleteFoto: (osId: string, fotoId: string) => `/api/ordens-servico/${osId}/fotos/${fotoId}`,
   },
   contas: {
     list: '/api/contas',
@@ -243,6 +253,8 @@ export const API_ENDPOINTS = {
   },
   estoque: {
     list: '/api/estoque',
+    all: '/api/estoque/all',
+    categorias: '/api/estoque/categorias',
     get: (id: string) => `/api/estoque/${id}`,
     create: '/api/estoque',
     update: (id: string) => `/api/estoque/${id}`,
@@ -254,6 +266,7 @@ export const API_ENDPOINTS = {
   },
   produtos: {
     list: '/api/produtos',
+    all: '/api/produtos/all',
     get: (id: string) => `/api/produtos/${id}`,
     create: '/api/produtos',
     update: (id: string) => `/api/produtos/${id}`,

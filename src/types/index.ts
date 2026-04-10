@@ -54,6 +54,11 @@ export enum StatusOrdemServico {
   CANCELADA = 'CANCELADA',
 }
 
+export enum TipoFoto {
+  ANTES = 'ANTES',
+  DEPOIS = 'DEPOIS',
+}
+
 export enum TipoConta {
   PAGAR = 'PAGAR',
   RECEBER = 'RECEBER',
@@ -94,6 +99,17 @@ export enum CategoriaPropostaItem {
   CABOS = 'CABOS',
   FRETE = 'FRETE',
   SERVICO = 'SERVICO',
+}
+
+// Infra
+export interface PageResponse<T> {
+  content: T[]
+  number: number
+  size: number
+  totalElements: number
+  totalPages: number
+  first: boolean
+  last: boolean
 }
 
 // Entities
@@ -226,9 +242,10 @@ export interface OrdemServicoRequest {
 
 export interface OrdemServicoFoto {
   id: string
-  ordemServicoId: string
+  ordemServicoId?: string
   url: string
-  tipo: string
+  tipo: TipoFoto | string
+  descricao?: string
   createdAt: string
 }
 
@@ -464,7 +481,8 @@ export interface ContaRequest {
 
 export interface PropostaItem {
   id: string
-  categoria: CategoriaPropostaItem
+  /** Código enum (GERADOR, CABOS, …) ou texto personalizado (até 100 caracteres). */
+  categoria: string
   descricao: string
   quantidade: number
   valorUnitario: number
@@ -474,7 +492,8 @@ export interface PropostaItem {
 export interface Proposta {
   id: string
   numero: string
-  cliente: Cliente
+  cliente: Cliente | null
+  clienteNome?: string
   tipo: TipoProposta
   dataEmissao: string
   validade: string
@@ -489,14 +508,15 @@ export interface Proposta {
 }
 
 export interface PropostaItemRequest {
-  categoria: CategoriaPropostaItem
+  categoria: string
   descricao: string
   quantidade: number
   valorUnitario: number
 }
 
 export interface PropostaRequest {
-  clienteId: string
+  clienteId?: string
+  clienteNome?: string
   tipo: TipoProposta
   dataEmissao: string
   validade: string

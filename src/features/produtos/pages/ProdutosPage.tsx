@@ -18,10 +18,16 @@ import {
   ChevronUp,
   X,
   Package,
-  DollarSign,
   Tag,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DesktopDataTableShell,
+  STH,
+  listInteractiveRow,
+  paginationBarClass,
+  paginationControlsClass,
+} from '@/components/tables/responsiveDataList'
 
 type ViewMode = 'cards' | 'table'
 
@@ -29,6 +35,10 @@ export function ProdutosPage() {
   const navigate = useNavigate()
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [categorias, setCategorias] = useState<string[]>([])
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -38,18 +48,29 @@ export function ProdutosPage() {
   }>({})
 
   useEffect(() => {
-    carregarDados()
+    produtoService
+      .listarCategorias()
+      .then(setCategorias)
+      .catch((err) => console.error('Erro ao carregar categorias:', err))
   }, [])
 
-  const carregarDados = async () => {
+  useEffect(() => {
+    carregarProdutos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, size, searchTerm, filters.categoria])
+
+  const carregarProdutos = async () => {
     try {
       setLoading(true)
-      const [produtosData, categoriasData] = await Promise.all([
-        produtoService.listar(),
-        produtoService.listarCategorias(),
-      ])
-      setProdutos(produtosData)
-      setCategorias(categoriasData)
+      const data = await produtoService.listarPagina({
+        page,
+        size,
+        q: searchTerm,
+        categoria: filters.categoria,
+      })
+      setProdutos(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar produtos:', err)
     } finally {
@@ -61,7 +82,9 @@ export function ProdutosPage() {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
         await produtoService.deletar(id)
-        await carregarDados()
+        await carregarProdutos()
+        const cats = await produtoService.listarCategorias()
+        setCategorias(cats)
       } catch (err: any) {
         alert(err.message || 'Erro ao excluir produto')
       }
@@ -75,28 +98,16 @@ export function ProdutosPage() {
     }).format(value)
   }
 
-  const filteredProdutos = produtos.filter((produto) => {
-    // Busca por texto
-    const matchesSearch =
-      produto.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      produto.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      produto.unidade.toLowerCase().includes(searchTerm.toLowerCase())
-
-    // Filtros
-    const matchesCategoria = !filters.categoria || produto.categoria === filters.categoria
-
-    return matchesSearch && matchesCategoria
-  })
-
   const clearFilters = () => {
+    setPage(0)
     setFilters({})
   }
 
-  const hasActiveFilters = Object.values(filters).some((value) => value !== undefined && value !== '')
+  const hasActiveFilters = Boolean(filters.categoria)
+  const activeFilterCount = filters.categoria ? 1 : 0
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Produtos</h1>
@@ -108,7 +119,6 @@ export function ProdutosPage() {
         </Button>
       </div>
 
-      {/* Busca e Controles */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -116,7 +126,10 @@ export function ProdutosPage() {
             <Input
               placeholder="Buscar por descrição, categoria ou unidade..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setPage(0)
+                setSearchTerm(e.target.value)
+              }}
               className="pl-10"
             />
           </div>
@@ -130,7 +143,7 @@ export function ProdutosPage() {
             Filtros
             {hasActiveFilters && (
               <span className="ml-1 bg-white text-blue-600 rounded-full h-5 w-5 flex items-center justify-center text-xs font-semibold">
-                {Object.values(filters).filter((v) => v !== undefined && v !== '').length}
+                {activeFilterCount}
               </span>
             )}
           </Button>
@@ -156,7 +169,6 @@ export function ProdutosPage() {
           </div>
         </div>
 
-        {/* Painel de Filtros */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -191,18 +203,18 @@ export function ProdutosPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Filtro por Categoria */}
                     <div className="space-y-2">
                       <Label htmlFor="filterCategoria">Categoria</Label>
                       <select
                         id="filterCategoria"
                         value={filters.categoria || ''}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setPage(0)
                           setFilters({
                             ...filters,
                             categoria: e.target.value || undefined,
                           })
-                        }
+                        }}
                         className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
                       >
                         <option value="">Todas</option>
@@ -221,7 +233,6 @@ export function ProdutosPage() {
         </AnimatePresence>
       </div>
 
-      {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -229,7 +240,7 @@ export function ProdutosPage() {
             <p className="text-slate-500">Carregando produtos...</p>
           </div>
         </div>
-      ) : filteredProdutos.length === 0 ? (
+      ) : produtos.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -241,96 +252,134 @@ export function ProdutosPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Descrição</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Categoria</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Unidade</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700">Preço Unitário</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProdutos.map((produto) => (
-                    <motion.tr
-                      key={produto.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => navigate(`/produtos/${produto.id}`)}
-                    >
-                      <td className="py-3 px-4">
-                        <span className="font-medium">{produto.descricao}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{produto.categoria}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm">{produto.unidade}</span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="font-semibold text-emerald-600">
-                          {formatCurrency(produto.precoUnitario)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/produtos/${produto.id}`)
-                            }}
-                            className="h-8 w-8"
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/produtos/${produto.id}/editar`)
-                            }}
-                            className="h-8 w-8"
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(produto.id)
-                            }}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <div className="space-y-3 md:hidden">
+            {produtos.map((produto) => (
+              <motion.div
+                key={produto.id}
+                role="button"
+                tabIndex={0}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => navigate(`/produtos/${produto.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/produtos/${produto.id}`)
+                  }
+                }}
+                className="w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="line-clamp-2 font-semibold text-slate-900">{produto.descricao}</p>
+                    <p className="inline-flex items-center gap-1 text-xs text-slate-500">
+                      <Tag className="h-3.5 w-3.5" />
+                      {produto.categoria} · {produto.unidade}
+                    </p>
+                    <p className="text-base font-bold tabular-nums text-emerald-700">{formatCurrency(produto.precoUnitario)}</p>
+                  </div>
+                  <div
+                    className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/produtos/${produto.id}`)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/produtos/${produto.id}/editar`)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50" onClick={() => handleDelete(produto.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <DesktopDataTableShell tableMinClass="min-w-[48rem]">
+            <thead>
+              <tr>
+                <th className={STH.left}>Descrição</th>
+                <th className={STH.midHiddenLg}>Categoria</th>
+                <th className={STH.mid}>Unidade</th>
+                <th className={STH.midNum}>Preço</th>
+                <th className={STH.right}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {produtos.map((produto, index) => (
+                <motion.tr
+                  key={produto.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className={listInteractiveRow(index)}
+                  onClick={() => navigate(`/produtos/${produto.id}`)}
+                >
+                  <td className="max-w-[16rem] py-3.5 pl-4 pr-3 align-middle">
+                    <span className="line-clamp-2 font-semibold text-slate-900">{produto.descricao}</span>
+                  </td>
+                  <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="line-clamp-2 text-sm text-slate-600">{produto.categoria}</span>
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3.5 align-middle text-sm text-slate-700">{produto.unidade}</td>
+                  <td className="px-3 py-3.5 text-right align-middle text-sm font-semibold tabular-nums text-emerald-700">
+                    {formatCurrency(produto.precoUnitario)}
+                  </td>
+                  <td className="px-1 py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Visualizar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/produtos/${produto.id}`)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Editar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/produtos/${produto.id}/editar`)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                        title="Excluir"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(produto.id)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </DesktopDataTableShell>
+        </>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProdutos.map((produto) => (
+          {produtos.map((produto) => (
             <motion.div
               key={produto.id}
               initial={{ opacity: 0, y: 20 }}
@@ -384,6 +433,44 @@ export function ProdutosPage() {
               </Card>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {!loading && produtos.length > 0 && (
+        <div className={paginationBarClass()}>
+          <div className="text-center text-sm text-slate-600 sm:text-left">
+            Total: <span className="font-semibold text-slate-900">{totalElements}</span>
+          </div>
+          <div className={paginationControlsClass()}>
+            <select
+              value={size}
+              onChange={(e) => {
+                setPage(0)
+                setSize(parseInt(e.target.value) || 20)
+              }}
+              className="flex h-9 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+            >
+              <option value="10">10 / pág</option>
+              <option value="20">20 / pág</option>
+              <option value="50">50 / pág</option>
+              <option value="100">100 / pág</option>
+            </select>
+            <Button variant="outline" size="sm" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+              Anterior
+            </Button>
+            <div className="text-sm text-slate-700">
+              Página <span className="font-semibold">{totalPages === 0 ? 0 : page + 1}</span> de{' '}
+              <span className="font-semibold">{totalPages}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={totalPages === 0 || page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
     </div>

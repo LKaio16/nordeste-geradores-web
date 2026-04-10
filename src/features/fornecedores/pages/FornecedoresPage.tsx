@@ -26,12 +26,24 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { maskCNPJ } from '@/utils/validators'
+import {
+  DesktopDataTableShell,
+  STH,
+  listInteractiveRow,
+  paginationBarClass,
+  paginationControlsClass,
+} from '@/components/tables/responsiveDataList'
 
 type ViewMode = 'cards' | 'table'
 
 export function FornecedoresPage() {
   const navigate = useNavigate()
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
+  const [ufs, setUfs] = useState<string[]>([])
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -42,14 +54,29 @@ export function FornecedoresPage() {
   }>({})
 
   useEffect(() => {
-    carregarFornecedores()
+    fornecedorService
+      .listarEstados()
+      .then(setUfs)
+      .catch((err) => console.error('Erro ao carregar UFs:', err))
   }, [])
+
+  useEffect(() => {
+    carregarFornecedores()
+  }, [page, size, searchTerm, filters.status, filters.estado])
 
   const carregarFornecedores = async () => {
     try {
       setLoading(true)
-      const data = await fornecedorService.listar()
-      setFornecedores(data)
+      const data = await fornecedorService.listarPagina({
+        page,
+        size,
+        q: searchTerm,
+        status: filters.status ?? '',
+        estado: filters.estado,
+      })
+      setFornecedores(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar fornecedores:', err)
     } finally {
@@ -72,27 +99,14 @@ export function FornecedoresPage() {
     return maskCNPJ(cnpj)
   }
 
-  const filteredFornecedores = fornecedores.filter((fornecedor) => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch =
-      (fornecedor.nome?.toLowerCase() || '').includes(searchLower) ||
-      (fornecedor.cnpj?.toLowerCase() || '').includes(searchLower) ||
-      (fornecedor.email?.toLowerCase() || '').includes(searchLower) ||
-      (fornecedor.cidade?.toLowerCase() || '').includes(searchLower)
-
-    const matchesStatus = !filters.status || fornecedor.status === filters.status
-    const matchesEstado = !filters.estado || fornecedor.estado === filters.estado
-
-    return matchesSearch && matchesStatus && matchesEstado
-  })
+  const filteredFornecedores = fornecedores
 
   const clearFilters = () => {
+    setPage(0)
     setFilters({})
   }
 
   const hasActiveFilters = Object.values(filters).some((value) => value !== undefined && value !== '')
-
-  const estados = Array.from(new Set(fornecedores.map((f) => f.estado).filter(Boolean))).sort()
 
   return (
     <div className="space-y-6">
@@ -116,7 +130,10 @@ export function FornecedoresPage() {
             <Input
               placeholder="Buscar por nome, CNPJ, email ou cidade..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setPage(0)
+                setSearchTerm(e.target.value)
+              }}
               className="pl-10"
             />
           </div>
@@ -197,12 +214,13 @@ export function FornecedoresPage() {
                       <select
                         id="filterStatus"
                         value={filters.status || ''}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setPage(0)
                           setFilters({
                             ...filters,
                             status: e.target.value ? (e.target.value as StatusFornecedor) : undefined,
                           })
-                        }
+                        }}
                         className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
                       >
                         <option value="">Todos</option>
@@ -217,18 +235,19 @@ export function FornecedoresPage() {
                       <select
                         id="filterEstado"
                         value={filters.estado || ''}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setPage(0)
                           setFilters({
                             ...filters,
                             estado: e.target.value || undefined,
                           })
-                        }
+                        }}
                         className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white"
                       >
                         <option value="">Todos</option>
-                        {estados.map((estado) => (
-                          <option key={estado} value={estado}>
-                            {estado}
+                        {ufs.map((uf) => (
+                          <option key={uf} value={uf}>
+                            {uf}
                           </option>
                         ))}
                       </select>
@@ -253,7 +272,9 @@ export function FornecedoresPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 mb-4">Nenhum fornecedor encontrado</p>
+            <p className="text-slate-500 mb-4">
+              {searchTerm || hasActiveFilters ? 'Nenhum fornecedor encontrado com os filtros aplicados' : 'Nenhum fornecedor cadastrado'}
+            </p>
             <Button onClick={() => navigate('/fornecedores/novo')} className="gap-2">
               <Plus className="h-4 w-4" />
               Criar Primeiro Fornecedor
@@ -261,117 +282,202 @@ export function FornecedoresPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Nome</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">CNPJ</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Telefone</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Cidade/UF</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFornecedores.map((fornecedor) => (
-                    <motion.tr
-                      key={fornecedor.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
-                    >
-                      <td className="py-3 px-4">
-                        <span className="font-medium">{fornecedor.nome}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-slate-600">{formatCNPJ(fornecedor.cnpj)}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{fornecedor.email}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{fornecedor.telefone}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">
-                            {fornecedor.cidade}, {fornecedor.estado}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {fornecedor.status === StatusFornecedor.ATIVO ? (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 w-fit">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Ativo
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 w-fit">
-                            <XCircle className="h-3 w-3" />
-                            Inativo
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/fornecedores/${fornecedor.id}`)
-                            }}
-                            className="h-8 w-8"
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/fornecedores/${fornecedor.id}/editar`)
-                            }}
-                            className="h-8 w-8"
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(fornecedor.id)
-                            }}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <div className="space-y-3 md:hidden">
+            {filteredFornecedores.map((fornecedor) => (
+              <motion.div
+                key={fornecedor.id}
+                role="button"
+                tabIndex={0}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/fornecedores/${fornecedor.id}`)
+                  }
+                }}
+                className="w-full cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm ring-1 ring-slate-900/5 transition hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-slate-900">{fornecedor.nome}</span>
+                      {fornecedor.status === StatusFornecedor.ATIVO ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Ativo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200/80">
+                          <XCircle className="h-3 w-3" />
+                          Inativo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm tabular-nums text-slate-600">{formatCNPJ(fornecedor.cnpj)}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <span className="inline-flex max-w-full items-center gap-1 truncate">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        {fornecedor.email}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {fornecedor.telefone}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      <MapPin className="mr-1 inline h-3.5 w-3.5" />
+                      {fornecedor.cidade}, {fornecedor.estado}
+                    </p>
+                  </div>
+                  <div
+                    className="flex w-full justify-end border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Visualizar"
+                        onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Editar"
+                        onClick={() => navigate(`/fornecedores/${fornecedor.id}/editar`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                        title="Excluir"
+                        onClick={() => handleDelete(fornecedor.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <DesktopDataTableShell tableMinClass="min-w-[56rem]">
+            <thead>
+              <tr>
+                <th className={STH.left}>Nome</th>
+                <th className={STH.mid}>CNPJ</th>
+                <th className={STH.midHiddenLg}>Email</th>
+                <th className={STH.midHiddenLg}>Telefone</th>
+                <th className={STH.mid}>Cidade/UF</th>
+                <th className={STH.mid}>Status</th>
+                <th className={STH.right}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredFornecedores.map((fornecedor, index) => (
+                <motion.tr
+                  key={fornecedor.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className={listInteractiveRow(index)}
+                  onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                >
+                  <td className="py-3.5 pl-4 pr-3 align-middle">
+                    <span className="font-semibold text-slate-900">{fornecedor.nome}</span>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle tabular-nums text-slate-700">
+                    {formatCNPJ(fornecedor.cnpj)}
+                  </td>
+                  <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="line-clamp-2 text-slate-700">{fornecedor.email}</span>
+                    </div>
+                  </td>
+                  <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="text-slate-700">{fornecedor.telefone}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="text-slate-700">
+                        {fornecedor.cidade}, {fornecedor.estado}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3.5 align-middle">
+                    {fornecedor.status === StatusFornecedor.ATIVO ? (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                        <XCircle className="h-3 w-3" />
+                        Inativo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-1 py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0.5 sm:justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Visualizar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/fornecedores/${fornecedor.id}`)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation"
+                        title="Editar"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/fornecedores/${fornecedor.id}/editar`)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700"
+                        title="Excluir"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(fornecedor.id)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </DesktopDataTableShell>
+        </>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFornecedores.map((fornecedor) => (
@@ -454,6 +560,44 @@ export function FornecedoresPage() {
               </Card>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {!loading && filteredFornecedores.length > 0 && (
+        <div className={paginationBarClass()}>
+          <div className="text-center text-sm text-slate-600 sm:text-left">
+            Total: <span className="font-semibold text-slate-900">{totalElements}</span>
+          </div>
+          <div className={paginationControlsClass()}>
+            <select
+              value={size}
+              onChange={(e) => {
+                setPage(0)
+                setSize(parseInt(e.target.value) || 20)
+              }}
+              className="flex h-9 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+            >
+              <option value="10">10 / pág</option>
+              <option value="20">20 / pág</option>
+              <option value="50">50 / pág</option>
+              <option value="100">100 / pág</option>
+            </select>
+            <Button variant="outline" size="sm" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+              Anterior
+            </Button>
+            <div className="text-sm text-slate-700">
+              Página <span className="font-semibold">{totalPages === 0 ? 0 : page + 1}</span> de{' '}
+              <span className="font-semibold">{totalPages}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={totalPages === 0 || page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
     </div>
