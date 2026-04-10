@@ -1,0 +1,22 @@
+{
+  "name": "Nordeste Geradores",
+  "short_name": "Nordeste",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "display": "standalone",
+  "start_url": "/",
+  "theme_color": "#203d7b",
+  "background_color": "#f8fafc"
+}
