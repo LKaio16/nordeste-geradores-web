@@ -139,7 +139,7 @@ export function OrdemServicoFormPage() {
   const carregarDados = async () => {
     try {
       setLoadingData(true)
-      const [locacoesData, usuariosData] = await Promise.all([carregarTodasLocacoes(), usuarioService.listar()])
+      const [locacoesData, usuariosData] = await Promise.all([carregarTodasLocacoes(), usuarioService.listarTodos()])
       setLocacoes(locacoesData)
       setTecnicos(usuariosData)
 

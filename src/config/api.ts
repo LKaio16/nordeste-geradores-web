@@ -170,6 +170,7 @@ export const API_ENDPOINTS = {
   },
   usuarios: {
     list: '/api/usuarios',
+    all: '/api/usuarios/all',
     get: (id: string) => `/api/usuarios/${id}`,
     create: '/api/usuarios',
     update: (id: string) => `/api/usuarios/${id}`,
@@ -177,6 +178,8 @@ export const API_ENDPOINTS = {
   },
   clientes: {
     list: '/api/clientes',
+    all: '/api/clientes/all',
+    estados: '/api/clientes/estados',
     get: (id: string) => `/api/clientes/${id}`,
     create: '/api/clientes',
     update: (id: string) => `/api/clientes/${id}`,
@@ -222,6 +225,7 @@ export const API_ENDPOINTS = {
   },
   contas: {
     list: '/api/contas',
+    all: '/api/contas/all',
     get: (id: string) => `/api/contas/${id}`,
     create: '/api/contas',
     update: (id: string) => `/api/contas/${id}`,
@@ -246,6 +250,7 @@ export const API_ENDPOINTS = {
   },
   notasFiscais: {
     list: '/api/notas-fiscais',
+    all: '/api/notas-fiscais/all',
     get: (id: string) => `/api/notas-fiscais/${id}`,
     create: '/api/notas-fiscais',
     update: (id: string) => `/api/notas-fiscais/${id}`,

@@ -1,4 +1,4 @@
-import { Usuario, UsuarioRequest, NivelAcesso, StatusUsuario } from '@/types'
+import { Usuario, UsuarioRequest, NivelAcesso, StatusUsuario, PageResponse } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 // Função auxiliar para formatar usuário da resposta
@@ -20,10 +20,36 @@ function formatUsuarioFromResponse(usuario: any): Usuario {
 }
 
 class UsuarioService {
-  async listar(): Promise<Usuario[]> {
+  async listarTodos(): Promise<Usuario[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.usuarios.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.usuarios.all)
       return response.data.map(formatUsuarioFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar usuários')
+    }
+  }
+
+  async listarPagina(params?: {
+    page?: number
+    size?: number
+    q?: string
+    status?: StatusUsuario | ''
+    nivelAcesso?: NivelAcesso | ''
+  }): Promise<PageResponse<Usuario>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.usuarios.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+          nivelAcesso: params?.nivelAcesso || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatUsuarioFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar usuários')
     }

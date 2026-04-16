@@ -46,7 +46,7 @@ export function LocacaoFormPage() {
     try {
       setLoadingData(true)
       const [clientesData, geradoresData] = await Promise.all([
-        clienteService.listar(),
+        clienteService.listarTodos(),
         geradorService.listarTodos(),
       ])
       setClientes(clientesData)

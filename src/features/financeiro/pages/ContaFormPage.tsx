@@ -113,7 +113,7 @@ export function ContaFormPage() {
 
   const carregarClientes = async () => {
     try {
-      const data = await clienteService.listar()
+      const data = await clienteService.listarTodos()
       setClientes(data.filter((c) => c.status === 'ATIVO'))
     } catch (err: any) {
       console.error('Erro ao carregar clientes:', err)

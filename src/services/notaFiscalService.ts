@@ -1,4 +1,4 @@
-import { NotaFiscal, NotaFiscalRequest } from '@/types'
+import { NotaFiscal, NotaFiscalRequest, PageResponse, TipoNotaFiscal, FormaPagamento } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 // Função auxiliar para formatar nota fiscal da resposta
@@ -33,10 +33,44 @@ function formatNotaFiscalFromResponse(nota: any): NotaFiscal {
 }
 
 class NotaFiscalService {
-  async listar(): Promise<NotaFiscal[]> {
+  async listarTodos(): Promise<NotaFiscal[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.notasFiscais.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.notasFiscais.all)
       return response.data.map(formatNotaFiscalFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar notas fiscais')
+    }
+  }
+
+  async listarPagina(params?: {
+    page?: number
+    size?: number
+    q?: string
+    tipo?: TipoNotaFiscal | ''
+    formaPagamento?: FormaPagamento | ''
+    fornecedorId?: string
+    origem?: 'fornecedor' | 'cliente' | ''
+    dataInicio?: string
+    dataFim?: string
+  }): Promise<PageResponse<NotaFiscal>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.notasFiscais.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          tipo: params?.tipo || undefined,
+          formaPagamento: params?.formaPagamento || undefined,
+          fornecedorId: params?.fornecedorId || undefined,
+          origem: params?.origem || undefined,
+          dataInicio: params?.dataInicio || undefined,
+          dataFim: params?.dataFim || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatNotaFiscalFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar notas fiscais')
     }

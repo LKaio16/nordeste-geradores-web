@@ -45,13 +45,18 @@ export function NotasFiscaisPage() {
     dataInicio?: string
     dataFim?: string
   }>({})
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+
+  useEffect(() => {
+    carregarFornecedores()
+  }, [])
 
   useEffect(() => {
     carregarNotas()
-    carregarFornecedores()
-  }, [])
+  }, [page, size, searchTerm, filters.tipo, filters.formaPagamento, filters.fornecedorId, filters.origem, filters.dataInicio, filters.dataFim])
 
   const carregarFornecedores = async () => {
     try {
@@ -65,8 +70,20 @@ export function NotasFiscaisPage() {
   const carregarNotas = async () => {
     try {
       setLoading(true)
-      const data = await notaFiscalService.listar()
-      setNotas(data)
+      const data = await notaFiscalService.listarPagina({
+        page,
+        size,
+        q: searchTerm,
+        tipo: filters.tipo ?? '',
+        formaPagamento: filters.formaPagamento ?? '',
+        fornecedorId: filters.fornecedorId,
+        origem: filters.origem ?? '',
+        dataInicio: filters.dataInicio,
+        dataFim: filters.dataFim,
+      })
+      setNotas(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar notas fiscais:', err)
     } finally {
@@ -140,54 +157,8 @@ export function NotasFiscaisPage() {
     </div>
   )
 
-  const filteredNotas = notas
-    .filter((nota) => {
-      // Busca por texto
-      const matchesSearch =
-        nota.numeroNota.includes(searchTerm) ||
-        nota.fornecedor.toLowerCase().includes(searchTerm.toLowerCase())
-
-      // Filtros
-      const matchesTipo = !filters.tipo || nota.tipo === filters.tipo
-      const matchesFormaPagamento =
-        !filters.formaPagamento || (nota.formaPagamento && nota.formaPagamento === filters.formaPagamento)
-      const matchesFornecedor =
-        !filters.fornecedorId ||
-        (nota.fornecedor &&
-          fornecedores.find((f) => f.id === filters.fornecedorId)?.nome === nota.fornecedor)
-      const matchesOrigem =
-        !filters.origem ||
-        (filters.origem === 'fornecedor' && !!nota.fornecedorId) ||
-        (filters.origem === 'cliente' && !!nota.clienteId)
-      const matchesDataInicio = !filters.dataInicio || nota.dataEmissao >= filters.dataInicio
-      const matchesDataFim = !filters.dataFim || nota.dataEmissao <= filters.dataFim
-
-      return (
-        matchesSearch &&
-        matchesTipo &&
-        matchesFormaPagamento &&
-        matchesFornecedor &&
-        matchesOrigem &&
-        matchesDataInicio &&
-        matchesDataFim
-      )
-    })
-    .sort((a, b) => {
-      // Ordenar por data de criação (mais recente primeiro)
-      const dateA = new Date(a.createdAt).getTime()
-      const dateB = new Date(b.createdAt).getTime()
-      return dateB - dateA
-    })
-
-  // Paginação
-  const totalPages = Math.ceil(filteredNotas.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedNotas = filteredNotas.slice(startIndex, endIndex)
-
-  // Resetar página quando filtros mudarem
   useEffect(() => {
-    setCurrentPage(1)
+    setPage(0)
   }, [searchTerm, filters])
 
   const clearFilters = () => {
@@ -431,7 +402,7 @@ export function NotasFiscaisPage() {
             <p className="text-slate-500">Carregando notas fiscais...</p>
           </div>
         </div>
-      ) : filteredNotas.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -446,7 +417,7 @@ export function NotasFiscaisPage() {
         <>
           {/* Lista em cartões — telas pequenas (tabela larga demais) */}
           <div className="space-y-3 md:hidden">
-            {paginatedNotas.map((nota) => (
+            {notas.map((nota) => (
               <motion.div
                 key={nota.id}
                 role="button"
@@ -533,7 +504,7 @@ export function NotasFiscaisPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {paginatedNotas.map((nota, index) => (
+                      {notas.map((nota, index) => (
                         <motion.tr
                           key={nota.id}
                           initial={{ opacity: 0 }}
@@ -598,7 +569,7 @@ export function NotasFiscaisPage() {
         </>
       ) : (
         <div className="space-y-4">
-                  {paginatedNotas.map((nota) => (
+                  {notas.map((nota) => (
             <motion.div
               key={nota.id}
               initial={{ opacity: 0, y: 20 }}
@@ -692,19 +663,37 @@ export function NotasFiscaisPage() {
       )}
 
       {/* Paginação */}
-      {filteredNotas.length > 0 && (
+      {totalElements > 0 && (
         <Card>
           <CardContent className="py-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-center text-sm text-slate-600 sm:text-left">
-                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredNotas.length)} de {filteredNotas.length} notas
+                Mostrando {totalElements === 0 ? 0 : page * size + 1} a {Math.min((page + 1) * size, totalElements)} de{' '}
+                {totalElements} notas
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <Label htmlFor="nfPageSize">Por página</Label>
+                  <select
+                    id="nfPageSize"
+                    value={size}
+                    onChange={(e) => {
+                      setPage(0)
+                      setSize(Number(e.target.value))
+                    }}
+                    className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm"
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page <= 0}
                   className="gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -713,21 +702,22 @@ export function NotasFiscaisPage() {
                 <div className="flex gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number
+                    const currentUi = page + 1
                     if (totalPages <= 5) {
                       pageNum = i + 1
-                    } else if (currentPage <= 3) {
+                    } else if (currentUi <= 3) {
                       pageNum = i + 1
-                    } else if (currentPage >= totalPages - 2) {
+                    } else if (currentUi >= totalPages - 2) {
                       pageNum = totalPages - 4 + i
                     } else {
-                      pageNum = currentPage - 2 + i
+                      pageNum = currentUi - 2 + i
                     }
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? 'default' : 'outline'}
+                        variant={currentUi === pageNum ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
+                        onClick={() => setPage(pageNum - 1)}
                         className="w-10"
                       >
                         {pageNum}
@@ -738,8 +728,8 @@ export function NotasFiscaisPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={totalPages === 0 || page >= totalPages - 1}
                   className="gap-2"
                 >
                   Próxima

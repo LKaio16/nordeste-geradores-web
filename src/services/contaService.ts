@@ -1,4 +1,4 @@
-import { Conta, ContaRequest, ContaAuditoria } from '@/types'
+import { Conta, ContaRequest, ContaAuditoria, PageResponse, TipoConta, StatusConta } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 // Função auxiliar para formatar conta da resposta
@@ -68,10 +68,42 @@ function formatContaFromResponse(conta: any): Conta {
 }
 
 class ContaService {
-  async listar(): Promise<Conta[]> {
+  async listarTodos(): Promise<Conta[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.contas.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.contas.all)
       return response.data.map(formatContaFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar contas')
+    }
+  }
+
+  async listarPagina(params?: {
+    page?: number
+    size?: number
+    q?: string
+    tipo?: TipoConta | ''
+    status?: StatusConta | ''
+    dataInicio?: string
+    dataFim?: string
+    sort?: string
+  }): Promise<PageResponse<Conta>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.contas.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          tipo: params?.tipo || undefined,
+          status: params?.status || undefined,
+          dataInicio: params?.dataInicio || undefined,
+          dataFim: params?.dataFim || undefined,
+          sort: params?.sort || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatContaFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar contas')
     }

@@ -218,7 +218,7 @@ export function PropostaFormPage() {
   const carregarDados = async () => {
     try {
       setLoadingData(true)
-      const clientesData = await clienteService.listar()
+      const clientesData = await clienteService.listarTodos()
       setClientes(clientesData)
     } catch (err: unknown) {
       console.error('Erro ao carregar dados:', err)

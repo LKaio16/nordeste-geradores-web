@@ -51,18 +51,28 @@ export function UsuariosPage() {
     status?: StatusUsuario
     nivelAcesso?: NivelAcesso
   }>({})
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
 
   useEffect(() => {
     carregarUsuarios()
-  }, [])
+  }, [page, size, searchTerm, filters.status, filters.nivelAcesso])
 
   const carregarUsuarios = async () => {
     try {
       setLoading(true)
-      const data = await usuarioService.listar()
-      setUsuarios(data)
+      const data = await usuarioService.listarPagina({
+        page,
+        size,
+        q: searchTerm,
+        status: filters.status ?? '',
+        nivelAcesso: filters.nivelAcesso ?? '',
+      })
+      setUsuarios(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar usuários:', err)
     } finally {
@@ -92,36 +102,16 @@ export function UsuariosPage() {
     return labels[nivel]
   }
 
-  const filteredUsuarios = usuarios
-    .filter((usuario) => {
-      const matchesSearch =
-        usuario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        usuario.telefone.includes(searchTerm) ||
-        usuario.cargo.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesStatus = !filters.status || usuario.status === filters.status
-      const matchesNivel = !filters.nivelAcesso || usuario.nivelAcesso === filters.nivelAcesso
-
-      return matchesSearch && matchesStatus && matchesNivel
-    })
-
-  // Paginação
-  const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedUsuarios = filteredUsuarios.slice(startIndex, endIndex)
-
-  // Resetar página quando filtros mudarem
   useEffect(() => {
-    setCurrentPage(1)
+    setPage(0)
   }, [filters, searchTerm])
 
   const clearFilters = () => {
+    setPage(0)
     setFilters({})
   }
 
-  const hasActiveFilters = Object.values(filters).some((value) => value !== undefined && value !== '')
+  const hasActiveFilters = Object.values(filters).some((value) => value != null)
 
   return (
     <div className="space-y-6">
@@ -159,7 +149,7 @@ export function UsuariosPage() {
             Filtros
             {hasActiveFilters && (
               <span className="ml-1 bg-white text-blue-600 rounded-full h-5 w-5 flex items-center justify-center text-xs font-semibold">
-                {Object.values(filters).filter((v) => v !== undefined && v !== '').length}
+                {Object.values(filters).filter((v) => v != null).length}
               </span>
             )}
           </Button>
@@ -277,7 +267,7 @@ export function UsuariosPage() {
             <p className="text-slate-500">Carregando funcionários...</p>
           </div>
         </div>
-      ) : filteredUsuarios.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <User className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -293,7 +283,8 @@ export function UsuariosPage() {
           {/* Informações de Resultado */}
           <div className={cn(paginationBarClass(), 'text-sm text-slate-600')}>
             <div className="text-center sm:text-left">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredUsuarios.length)} de {filteredUsuarios.length} funcionários
+              Mostrando {totalElements === 0 ? 0 : page * size + 1} a{' '}
+              {Math.min((page + 1) * size, totalElements)} de {totalElements} funcionários
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               <Label htmlFor="itemsPerPage" className="text-sm">
@@ -301,15 +292,15 @@ export function UsuariosPage() {
               </Label>
               <select
                 id="itemsPerPage"
-                value={itemsPerPage}
+                value={size}
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
+                  setPage(0)
+                  setSize(Number(e.target.value))
                 }}
                 className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
               >
                 <option value="10">10</option>
-                <option value="25">25</option>
+                <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
@@ -317,7 +308,7 @@ export function UsuariosPage() {
           </div>
 
           <div className="space-y-3 md:hidden">
-            {paginatedUsuarios.map((usuario) => (
+            {usuarios.map((usuario) => (
               <motion.div
                 key={usuario.id}
                 role="button"
@@ -402,7 +393,7 @@ export function UsuariosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedUsuarios.map((usuario, index) => (
+              {usuarios.map((usuario, index) => (
                 <motion.tr
                   key={usuario.id}
                   initial={{ opacity: 0 }}
@@ -514,14 +505,14 @@ export function UsuariosPage() {
               <CardContent className="py-4">
                 <div className={paginationBarClass()}>
                   <div className="text-center text-sm text-slate-600 sm:text-left">
-                    Página {currentPage} de {totalPages}
+                    Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
                   </div>
                   <div className={paginationControlsClass()}>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page <= 0}
                       className="gap-2"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -530,21 +521,22 @@ export function UsuariosPage() {
                     <div className="flex gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum: number
+                        const currentUi = page + 1
                         if (totalPages <= 5) {
                           pageNum = i + 1
-                        } else if (currentPage <= 3) {
+                        } else if (currentUi <= 3) {
                           pageNum = i + 1
-                        } else if (currentPage >= totalPages - 2) {
+                        } else if (currentUi >= totalPages - 2) {
                           pageNum = totalPages - 4 + i
                         } else {
-                          pageNum = currentPage - 2 + i
+                          pageNum = currentUi - 2 + i
                         }
                         return (
                           <Button
                             key={pageNum}
-                            variant={currentPage === pageNum ? 'default' : 'outline'}
+                            variant={currentUi === pageNum ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
+                            onClick={() => setPage(pageNum - 1)}
                             className="w-10"
                           >
                             {pageNum}
@@ -555,8 +547,8 @@ export function UsuariosPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={totalPages === 0 || page >= totalPages - 1}
                       className="gap-2"
                     >
                       Próxima
@@ -573,21 +565,22 @@ export function UsuariosPage() {
           {/* Informações de Resultado para Cards */}
           <div className="flex items-center justify-between text-sm text-slate-600">
             <div>
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredUsuarios.length)} de {filteredUsuarios.length} funcionários
+              Mostrando {totalElements === 0 ? 0 : page * size + 1} a{' '}
+              {Math.min((page + 1) * size, totalElements)} de {totalElements} funcionários
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="itemsPerPageCards" className="text-sm">Itens por página:</Label>
               <select
                 id="itemsPerPageCards"
-                value={itemsPerPage}
+                value={size}
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
+                  setPage(0)
+                  setSize(Number(e.target.value))
                 }}
                 className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
               >
                 <option value="10">10</option>
-                <option value="25">25</option>
+                <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
@@ -595,7 +588,7 @@ export function UsuariosPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedUsuarios.map((usuario) => (
+            {usuarios.map((usuario) => (
               <motion.div
                 key={usuario.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -687,14 +680,14 @@ export function UsuariosPage() {
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-slate-600">
-                    Página {currentPage} de {totalPages}
+                    Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page <= 0}
                       className="gap-2"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -703,21 +696,22 @@ export function UsuariosPage() {
                     <div className="flex gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum: number
+                        const currentUi = page + 1
                         if (totalPages <= 5) {
                           pageNum = i + 1
-                        } else if (currentPage <= 3) {
+                        } else if (currentUi <= 3) {
                           pageNum = i + 1
-                        } else if (currentPage >= totalPages - 2) {
+                        } else if (currentUi >= totalPages - 2) {
                           pageNum = totalPages - 4 + i
                         } else {
-                          pageNum = currentPage - 2 + i
+                          pageNum = currentUi - 2 + i
                         }
                         return (
                           <Button
                             key={pageNum}
-                            variant={currentPage === pageNum ? 'default' : 'outline'}
+                            variant={currentUi === pageNum ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
+                            onClick={() => setPage(pageNum - 1)}
                             className="w-10"
                           >
                             {pageNum}
@@ -728,8 +722,8 @@ export function UsuariosPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={totalPages === 0 || page >= totalPages - 1}
                       className="gap-2"
                     >
                       Próxima

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Conta, TipoConta, StatusConta } from '@/types'
 import { contaService } from '@/services/contaService'
 import { Button } from '@/components/ui/button'
@@ -41,33 +41,101 @@ import { cn } from '@/components/ui/utils'
 
 type ViewMode = 'cards' | 'table'
 
+type ContaListFilters = {
+  tipo?: TipoConta
+  status?: StatusConta
+  dataInicio?: string
+  dataFim?: string
+}
+
+function filtrosIniciaisDaUrl(sp: URLSearchParams): ContaListFilters {
+  const f: ContaListFilters = {}
+  const st = sp.get('status')
+  const tp = sp.get('tipo')
+  if (st && (Object.values(StatusConta) as string[]).includes(st)) f.status = st as StatusConta
+  if (tp && (Object.values(TipoConta) as string[]).includes(tp)) f.tipo = tp as TipoConta
+  return f
+}
+
+function painelFiltrosAbertoNaUrl(sp: URLSearchParams): boolean {
+  const { status, tipo } = filtrosIniciaisDaUrl(sp)
+  return status !== undefined || tipo !== undefined
+}
+
 export function ContasPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const urlQueryRef = useRef(searchParams.toString())
   const [contas, setContas] = useState<Conta[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q')?.trim() || '')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<{
-    tipo?: TipoConta
-    status?: StatusConta
-    dataInicio?: string
-    dataFim?: string
-  }>({})
+  const [showFilters, setShowFilters] = useState(() => painelFiltrosAbertoNaUrl(searchParams))
+  const [filters, setFilters] = useState<ContaListFilters>(() => filtrosIniciaisDaUrl(searchParams))
   const [ordenacaoVencimento, setOrdenacaoVencimento] = useState<'asc' | 'desc' | null>(null)
   const [periodoRapido, setPeriodoRapido] = useState<'todos' | 'hoje' | 'semana' | 'mes' | 'trimestre' | 'ano' | 'personalizado'>('todos')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+
+  useEffect(() => {
+    const key = searchParams.toString()
+    if (key === urlQueryRef.current) return
+    urlQueryRef.current = key
+
+    const st = searchParams.get('status')
+    const tp = searchParams.get('tipo')
+
+    setFilters((prev) => {
+      const next = { ...prev }
+      if (searchParams.has('status')) {
+        if (st && (Object.values(StatusConta) as string[]).includes(st)) next.status = st as StatusConta
+        else delete next.status
+      }
+      if (searchParams.has('tipo')) {
+        if (tp && (Object.values(TipoConta) as string[]).includes(tp)) next.tipo = tp as TipoConta
+        else delete next.tipo
+      }
+      return next
+    })
+
+    if (searchParams.has('q')) setSearchTerm(searchParams.get('q')?.trim() ?? '')
+    else setSearchTerm('')
+
+    const statusOk = st && (Object.values(StatusConta) as string[]).includes(st)
+    const tipoOk = tp && (Object.values(TipoConta) as string[]).includes(tp)
+    if (statusOk || tipoOk) setShowFilters(true)
+
+    setPage(0)
+  }, [searchParams])
 
   useEffect(() => {
     carregarContas()
-  }, [])
+  }, [page, size, searchTerm, filters.tipo, filters.status, filters.dataInicio, filters.dataFim, ordenacaoVencimento])
 
   const carregarContas = async () => {
     try {
       setLoading(true)
-      const data = await contaService.listar()
-      setContas(data)
+      const sort =
+        ordenacaoVencimento === 'asc'
+          ? 'dataVencimento,asc'
+          : ordenacaoVencimento === 'desc'
+            ? 'dataVencimento,desc'
+            : undefined
+      const data = await contaService.listarPagina({
+        page,
+        size,
+        q: searchTerm,
+        tipo: filters.tipo ?? '',
+        status: filters.status ?? '',
+        dataInicio: filters.dataInicio,
+        dataFim: filters.dataFim,
+        sort,
+      })
+      setContas(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (err: any) {
       console.error('Erro ao carregar contas:', err)
     } finally {
@@ -166,81 +234,8 @@ export function ContasPage() {
     }))
   }
 
-  const filteredContas = contas
-    .filter((conta) => {
-      const matchesSearch =
-        conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (conta.cliente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        formatCurrency(conta.valor).toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesTipo = !filters.tipo || conta.tipo === filters.tipo
-      
-      // Para o filtro de status, se for VENCIDO, incluir contas que estão vencidas pela data
-      let matchesStatus = true
-      if (filters.status) {
-        if (filters.status === StatusConta.VENCIDO) {
-          // Incluir contas com status VENCIDO ou que estão vencidas pela data
-          matchesStatus = conta.status === StatusConta.VENCIDO || isVencida(conta.dataVencimento, conta.status)
-        } else {
-          matchesStatus = conta.status === filters.status
-        }
-      }
-
-      // Filtro por data de vencimento
-      let matchesData = true
-      if (filters.dataInicio || filters.dataFim) {
-        // Parse direto da data sem conversão de timezone
-        const vencimentoStr = conta.dataVencimento.split('T')[0]
-        const [anoVenc, mesVenc, diaVenc] = vencimentoStr.split('-').map(Number)
-        const dataVencimento = new Date(anoVenc, mesVenc - 1, diaVenc)
-        dataVencimento.setHours(0, 0, 0, 0)
-        
-        if (filters.dataInicio) {
-          const inicioStr = filters.dataInicio.split('T')[0]
-          const [anoInicio, mesInicio, diaInicio] = inicioStr.split('-').map(Number)
-          const dataInicio = new Date(anoInicio, mesInicio - 1, diaInicio)
-          dataInicio.setHours(0, 0, 0, 0)
-          if (dataVencimento < dataInicio) matchesData = false
-        }
-        if (filters.dataFim) {
-          const fimStr = filters.dataFim.split('T')[0]
-          const [anoFim, mesFim, diaFim] = fimStr.split('-').map(Number)
-          const dataFim = new Date(anoFim, mesFim - 1, diaFim)
-          dataFim.setHours(23, 59, 59, 999)
-          if (dataVencimento > dataFim) matchesData = false
-        }
-      }
-
-      return matchesSearch && matchesTipo && matchesStatus && matchesData
-    })
-    .sort((a, b) => {
-      if (ordenacaoVencimento === null) return 0
-
-      // Parse direto das datas sem conversão de timezone
-      const parseDate = (dateStr: string): number => {
-        const dateParts = dateStr.split('T')[0].split('-').map(Number)
-        return new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).getTime()
-      }
-      
-      const dataA = parseDate(a.dataVencimento)
-      const dataB = parseDate(b.dataVencimento)
-
-      if (ordenacaoVencimento === 'asc') {
-        return dataA - dataB
-      } else {
-        return dataB - dataA
-      }
-    })
-
-  // Paginação
-  const totalPages = Math.ceil(filteredContas.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedContas = filteredContas.slice(startIndex, endIndex)
-
-  // Resetar página quando filtros mudarem
   useEffect(() => {
-    setCurrentPage(1)
+    setPage(0)
   }, [filters, searchTerm, ordenacaoVencimento])
 
   const toggleOrdenacaoVencimento = () => {
@@ -522,7 +517,7 @@ export function ContasPage() {
             <p className="text-slate-500">Carregando contas...</p>
           </div>
         </div>
-      ) : filteredContas.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -538,7 +533,8 @@ export function ContasPage() {
           {/* Informações de Resultado */}
           <div className={cn(paginationBarClass(), 'text-sm text-slate-600')}>
             <div className="text-center sm:text-left">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredContas.length)} de {filteredContas.length} contas
+              Mostrando {totalElements === 0 ? 0 : page * size + 1} a{' '}
+              {Math.min((page + 1) * size, totalElements)} de {totalElements} contas
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               <Label htmlFor="itemsPerPage" className="text-sm">
@@ -546,15 +542,15 @@ export function ContasPage() {
               </Label>
               <select
                 id="itemsPerPage"
-                value={itemsPerPage}
+                value={size}
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
+                  setPage(0)
+                  setSize(Number(e.target.value))
                 }}
                 className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm"
               >
                 <option value="10">10</option>
-                <option value="25">25</option>
+                <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
@@ -562,7 +558,7 @@ export function ContasPage() {
           </div>
 
           <div className="space-y-3 md:hidden">
-            {paginatedContas.map((conta) => {
+            {contas.map((conta) => {
               const vencida = isVencida(conta.dataVencimento, conta.status)
               return (
                 <motion.div
@@ -688,7 +684,7 @@ export function ContasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedContas.map((conta, index) => {
+              {contas.map((conta, index) => {
                 const vencida = isVencida(conta.dataVencimento, conta.status)
                 return (
                   <motion.tr
@@ -809,14 +805,14 @@ export function ContasPage() {
             <CardContent className="py-4">
               <div className={paginationBarClass()}>
                 <div className="text-center text-sm text-slate-600 sm:text-left">
-                  Página {currentPage} de {totalPages}
+                  Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
                 </div>
                 <div className={paginationControlsClass()}>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page <= 0}
                     className="gap-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -825,21 +821,22 @@ export function ContasPage() {
                   <div className="flex gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum: number
+                      const currentUi = page + 1
                       if (totalPages <= 5) {
                         pageNum = i + 1
-                      } else if (currentPage <= 3) {
+                      } else if (currentUi <= 3) {
                         pageNum = i + 1
-                      } else if (currentPage >= totalPages - 2) {
+                      } else if (currentUi >= totalPages - 2) {
                         pageNum = totalPages - 4 + i
                       } else {
-                        pageNum = currentPage - 2 + i
+                        pageNum = currentUi - 2 + i
                       }
                       return (
                         <Button
                           key={pageNum}
-                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          variant={currentUi === pageNum ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
+                          onClick={() => setPage(pageNum - 1)}
                           className="w-10"
                         >
                           {pageNum}
@@ -850,8 +847,8 @@ export function ContasPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={totalPages === 0 || page >= totalPages - 1}
                     className="gap-2"
                   >
                     Próxima
@@ -868,21 +865,22 @@ export function ContasPage() {
           {/* Informações de Resultado para Cards */}
           <div className="flex items-center justify-between text-sm text-slate-600">
             <div>
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredContas.length)} de {filteredContas.length} contas
+              Mostrando {totalElements === 0 ? 0 : page * size + 1} a{' '}
+              {Math.min((page + 1) * size, totalElements)} de {totalElements} contas
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="itemsPerPageCards" className="text-sm">Itens por página:</Label>
               <select
                 id="itemsPerPageCards"
-                value={itemsPerPage}
+                value={size}
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
+                  setPage(0)
+                  setSize(Number(e.target.value))
                 }}
                 className="h-8 px-2 rounded-md border border-slate-200 bg-white text-sm"
               >
                 <option value="10">10</option>
-                <option value="25">25</option>
+                <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
@@ -890,7 +888,7 @@ export function ContasPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedContas.map((conta) => {
+            {contas.map((conta) => {
             const vencida = isVencida(conta.dataVencimento, conta.status)
             return (
               <motion.div
@@ -996,14 +994,14 @@ export function ContasPage() {
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-slate-600">
-                    Página {currentPage} de {totalPages}
+                    Página {totalPages === 0 ? 0 : page + 1} de {totalPages}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page <= 0}
                       className="gap-2"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -1012,21 +1010,22 @@ export function ContasPage() {
                     <div className="flex gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum: number
+                        const currentUi = page + 1
                         if (totalPages <= 5) {
                           pageNum = i + 1
-                        } else if (currentPage <= 3) {
+                        } else if (currentUi <= 3) {
                           pageNum = i + 1
-                        } else if (currentPage >= totalPages - 2) {
+                        } else if (currentUi >= totalPages - 2) {
                           pageNum = totalPages - 4 + i
                         } else {
-                          pageNum = currentPage - 2 + i
+                          pageNum = currentUi - 2 + i
                         }
                         return (
                           <Button
                             key={pageNum}
-                            variant={currentPage === pageNum ? 'default' : 'outline'}
+                            variant={currentUi === pageNum ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
+                            onClick={() => setPage(pageNum - 1)}
                             className="w-10"
                           >
                             {pageNum}
@@ -1037,8 +1036,8 @@ export function ContasPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={totalPages === 0 || page >= totalPages - 1}
                       className="gap-2"
                     >
                       Próxima

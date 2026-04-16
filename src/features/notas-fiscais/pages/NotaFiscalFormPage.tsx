@@ -198,7 +198,7 @@ export function NotaFiscalFormPage() {
   const carregarClientes = async () => {
     try {
       setLoadingClientes(true)
-      const data = await clienteService.listar()
+      const data = await clienteService.listarTodos()
       setClientes(data.filter(c => c.status === 'ATIVO'))
     } catch (err: any) {
       console.error('Erro ao carregar clientes:', err)

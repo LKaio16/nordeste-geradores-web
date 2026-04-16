@@ -218,9 +218,9 @@ export function DashboardPage() {
       setLoading(true)
 
       const [contas, geradores, clientes] = await Promise.all([
-        contaService.listar().catch(() => []),
+        contaService.listarTodos().catch(() => []),
         geradorService.listarTodos().catch(() => []),
-        clienteService.listar().catch(() => []),
+        clienteService.listarTodos().catch(() => []),
       ])
 
       const contasReceber = contas.filter(

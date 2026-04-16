@@ -1,4 +1,4 @@
-import { Cliente, ClienteRequest } from '@/types'
+import { Cliente, ClienteRequest, PageResponse, StatusCliente } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
 
 // Função auxiliar para formatar cliente da resposta
@@ -19,10 +19,46 @@ function formatClienteFromResponse(cliente: any): Cliente {
 }
 
 class ClienteService {
-  async listar(): Promise<Cliente[]> {
+  /** Lista completa (selects, dashboard). */
+  async listarTodos(): Promise<Cliente[]> {
     try {
-      const response = await api.get<any[]>(API_ENDPOINTS.clientes.list)
+      const response = await api.get<any[]>(API_ENDPOINTS.clientes.all)
       return response.data.map(formatClienteFromResponse)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar clientes')
+    }
+  }
+
+  async listarEstados(): Promise<string[]> {
+    try {
+      const response = await api.get<string[]>(API_ENDPOINTS.clientes.estados)
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao listar UFs')
+    }
+  }
+
+  async listarPagina(params?: {
+    page?: number
+    size?: number
+    q?: string
+    status?: StatusCliente | ''
+    estado?: string
+  }): Promise<PageResponse<Cliente>> {
+    try {
+      const response = await api.get<PageResponse<any>>(API_ENDPOINTS.clientes.list, {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          q: params?.q || undefined,
+          status: params?.status || undefined,
+          estado: params?.estado || undefined,
+        },
+      })
+      return {
+        ...response.data,
+        content: response.data.content.map(formatClienteFromResponse),
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao listar clientes')
     }
