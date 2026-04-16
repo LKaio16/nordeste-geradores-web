@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Building2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -60,6 +61,19 @@ function filtrosIniciaisDaUrl(sp: URLSearchParams): ContaListFilters {
 function painelFiltrosAbertoNaUrl(sp: URLSearchParams): boolean {
   const { status, tipo } = filtrosIniciaisDaUrl(sp)
   return status !== undefined || tipo !== undefined
+}
+
+/** Fornecedor tem prioridade na exibição quando existir vínculo. */
+function getContaContraparteNome(conta: Conta): string | null {
+  const fn = conta.fornecedor?.nome?.trim()
+  if (fn) return fn
+  const cl = conta.cliente?.nome?.trim()
+  if (cl) return cl
+  return null
+}
+
+function isContraparteFornecedor(conta: Conta): boolean {
+  return Boolean(conta.fornecedor?.nome?.trim())
 }
 
 export function ContasPage() {
@@ -275,7 +289,7 @@ export function ContasPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Buscar por descrição, cliente ou valor..."
+              placeholder="Buscar por descrição, cliente, fornecedor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -560,6 +574,8 @@ export function ContasPage() {
           <div className="space-y-3 md:hidden">
             {contas.map((conta) => {
               const vencida = isVencida(conta.dataVencimento, conta.status)
+              const contraparteNome = getContaContraparteNome(conta)
+              const contraparteEhFornecedor = isContraparteFornecedor(conta)
               return (
                 <motion.div
                   key={conta.id}
@@ -610,10 +626,14 @@ export function ContasPage() {
                       </div>
                       <p className="font-semibold text-slate-900">{conta.descricao}</p>
                       <p className="text-xs text-slate-600">Categoria: {conta.categoria || 'Geral'}</p>
-                      {conta.cliente ? (
+                      {contraparteNome ? (
                         <p className="flex items-center gap-1.5 text-xs text-slate-600">
-                          <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                          {conta.cliente.nome}
+                          {contraparteEhFornecedor ? (
+                            <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          ) : (
+                            <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          )}
+                          {contraparteNome}
                         </p>
                       ) : null}
                       <p className="text-sm font-semibold tabular-nums text-slate-900">{formatCurrency(conta.valor)}</p>
@@ -647,7 +667,7 @@ export function ContasPage() {
                 <th className={STH.mid}>Tipo</th>
                 <th className={STH.left}>Descrição</th>
                 <th className={STH.midHiddenLg}>Categoria</th>
-                <th className={STH.midHiddenLg}>Cliente</th>
+                <th className={STH.midHiddenLg}>Cliente / Fornecedor</th>
                 <th className={STH.midNum}>Valor</th>
                 <th className={STH.mid}>
                   <div className="flex items-center gap-1.5">
@@ -686,6 +706,8 @@ export function ContasPage() {
             <tbody className="divide-y divide-slate-100">
               {contas.map((conta, index) => {
                 const vencida = isVencida(conta.dataVencimento, conta.status)
+                const contraparteNome = getContaContraparteNome(conta)
+                const contraparteEhFornecedor = isContraparteFornecedor(conta)
                 return (
                   <motion.tr
                     key={conta.id}
@@ -712,10 +734,14 @@ export function ContasPage() {
                       <span className="text-sm text-slate-700">{conta.categoria || 'Geral'}</span>
                     </td>
                     <td className="hidden px-3 py-3.5 align-middle lg:table-cell">
-                      {conta.cliente ? (
+                      {contraparteNome ? (
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 shrink-0 text-slate-400" />
-                          <span className="line-clamp-2 text-sm text-slate-700">{conta.cliente.nome}</span>
+                          {contraparteEhFornecedor ? (
+                            <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                          ) : (
+                            <User className="h-4 w-4 shrink-0 text-slate-400" />
+                          )}
+                          <span className="line-clamp-2 text-sm text-slate-700">{contraparteNome}</span>
                         </div>
                       ) : (
                         <span className="text-sm text-slate-400">—</span>
@@ -890,6 +916,8 @@ export function ContasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {contas.map((conta) => {
             const vencida = isVencida(conta.dataVencimento, conta.status)
+            const contraparteNome = getContaContraparteNome(conta)
+            const contraparteEhFornecedor = isContraparteFornecedor(conta)
             return (
               <motion.div
                 key={conta.id}
@@ -946,10 +974,14 @@ export function ContasPage() {
                         Vencimento: {formatDate(conta.dataVencimento)}
                       </span>
                     </div>
-                    {conta.cliente && (
+                    {contraparteNome && (
                       <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <User className="h-4 w-4 text-slate-400" />
-                        <span className="truncate">{conta.cliente.nome}</span>
+                        {contraparteEhFornecedor ? (
+                          <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                        ) : (
+                          <User className="h-4 w-4 shrink-0 text-slate-400" />
+                        )}
+                        <span className="truncate">{contraparteNome}</span>
                       </div>
                     )}
                     <div className="flex gap-1 pt-2 border-t">
