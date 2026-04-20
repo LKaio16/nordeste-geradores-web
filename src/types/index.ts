@@ -45,6 +45,8 @@ export enum TipoOrdemServico {
   ENTREGA = 'ENTREGA',
   RECOLHIMENTO = 'RECOLHIMENTO',
   MANUTENCAO = 'MANUTENCAO',
+  /** Ida e volta no mesmo dia com o gerador */
+  DIARIO = 'DIARIO',
 }
 
 export enum StatusOrdemServico {

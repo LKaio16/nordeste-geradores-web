@@ -41,6 +41,7 @@ const tipoLabels: Record<TipoOrdemServico, string> = {
   [TipoOrdemServico.ENTREGA]: 'Entrega',
   [TipoOrdemServico.RECOLHIMENTO]: 'Recolhimento',
   [TipoOrdemServico.MANUTENCAO]: 'Manutenção',
+  [TipoOrdemServico.DIARIO]: 'Diário',
 }
 
 const statusLabels: Record<StatusOrdemServico, string> = {
@@ -119,14 +120,18 @@ export function OrdemServicoFormPage() {
   }, [formData.locacaoId, locacoes])
 
   useEffect(() => {
-    if (formData.tipo === TipoOrdemServico.ENTREGA && formData.geradorId && !horimetroEditadoManualmente) {
+    if (
+      (formData.tipo === TipoOrdemServico.ENTREGA || formData.tipo === TipoOrdemServico.DIARIO) &&
+      formData.geradorId &&
+      !horimetroEditadoManualmente
+    ) {
       const gerador =
         geradores.find((g) => g.id === formData.geradorId) ||
         locacoes.find((l) => l.id === formData.locacaoId)?.gerador
       if (gerador?.horimetro !== undefined) {
         setFormData((prev) => ({ ...prev, horimetroInicial: gerador.horimetro }))
       }
-    } else if (formData.tipo !== TipoOrdemServico.ENTREGA) {
+    } else if (formData.tipo !== TipoOrdemServico.ENTREGA && formData.tipo !== TipoOrdemServico.DIARIO) {
       setFormData((prev) => ({ ...prev, horimetroInicial: undefined }))
       setHorimetroEditadoManualmente(false)
     }
@@ -323,9 +328,13 @@ export function OrdemServicoFormPage() {
                       ...formData,
                       tipo: novoTipo,
                       horimetroInicial:
-                        novoTipo === TipoOrdemServico.ENTREGA ? formData.horimetroInicial : undefined,
+                        novoTipo === TipoOrdemServico.ENTREGA || novoTipo === TipoOrdemServico.DIARIO
+                          ? formData.horimetroInicial
+                          : undefined,
                       horimetroFinal:
-                        novoTipo === TipoOrdemServico.MANUTENCAO || novoTipo === TipoOrdemServico.RECOLHIMENTO
+                        novoTipo === TipoOrdemServico.MANUTENCAO ||
+                        novoTipo === TipoOrdemServico.RECOLHIMENTO ||
+                        novoTipo === TipoOrdemServico.DIARIO
                           ? formData.horimetroFinal
                           : undefined,
                     })
@@ -336,6 +345,7 @@ export function OrdemServicoFormPage() {
                   <option value={TipoOrdemServico.ENTREGA}>Entrega</option>
                   <option value={TipoOrdemServico.RECOLHIMENTO}>Recolhimento</option>
                   <option value={TipoOrdemServico.MANUTENCAO}>Manutenção</option>
+                  <option value={TipoOrdemServico.DIARIO}>Diário (ida e volta no mesmo dia)</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -386,7 +396,8 @@ export function OrdemServicoFormPage() {
 
           {(formData.tipo === TipoOrdemServico.ENTREGA ||
             formData.tipo === TipoOrdemServico.MANUTENCAO ||
-            formData.tipo === TipoOrdemServico.RECOLHIMENTO) && (
+            formData.tipo === TipoOrdemServico.RECOLHIMENTO ||
+            formData.tipo === TipoOrdemServico.DIARIO) && (
             <Card className="border-slate-200/90 shadow-sm">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2 text-[#203d7b]">
@@ -396,7 +407,7 @@ export function OrdemServicoFormPage() {
                 <CardDescription>Conforme o tipo de OS, informe leitura inicial ou final.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                {formData.tipo === TipoOrdemServico.ENTREGA && (
+                {(formData.tipo === TipoOrdemServico.ENTREGA || formData.tipo === TipoOrdemServico.DIARIO) && (
                   <div className="space-y-2">
                     <Label htmlFor="horimetroInicial">Horímetro inicial *</Label>
                     <Input
@@ -416,7 +427,7 @@ export function OrdemServicoFormPage() {
                       required
                     />
                     <p className="text-xs text-slate-500">
-                      Leitura na entrega.
+                      {formData.tipo === TipoOrdemServico.DIARIO ? 'Leitura ao sair com o gerador.' : 'Leitura na entrega.'}
                       {geradorSelecionado?.horimetro !== undefined ? (
                         <span className="ml-1 text-[#203d7b]">
                           Cadastro do gerador: {geradorSelecionado.horimetro.toLocaleString('pt-BR')} h
@@ -426,9 +437,12 @@ export function OrdemServicoFormPage() {
                   </div>
                 )}
                 {(formData.tipo === TipoOrdemServico.MANUTENCAO ||
-                  formData.tipo === TipoOrdemServico.RECOLHIMENTO) && (
+                  formData.tipo === TipoOrdemServico.RECOLHIMENTO ||
+                  formData.tipo === TipoOrdemServico.DIARIO) && (
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="horimetroFinal">Horímetro final *</Label>
+                    <Label htmlFor="horimetroFinal">
+                      Horímetro final {formData.tipo === TipoOrdemServico.DIARIO ? '' : '*'}
+                    </Label>
                     <Input
                       id="horimetroFinal"
                       type="number"
@@ -442,12 +456,14 @@ export function OrdemServicoFormPage() {
                         })
                       }
                       className={fieldClass}
-                      required
+                      required={formData.tipo !== TipoOrdemServico.DIARIO}
                     />
                     <p className="text-xs text-slate-500">
                       {formData.tipo === TipoOrdemServico.MANUTENCAO
                         ? 'Após a manutenção (atualiza o gerador).'
-                        : 'No recolhimento (atualiza o gerador).'}
+                        : formData.tipo === TipoOrdemServico.DIARIO
+                          ? 'Ao retornar no mesmo dia (atualiza o gerador). Pode ser preenchido na conclusão pelo técnico.'
+                          : 'No recolhimento (atualiza o gerador).'}
                     </p>
                   </div>
                 )}

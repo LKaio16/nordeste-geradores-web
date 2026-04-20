@@ -152,7 +152,12 @@ class OrdemServicoService {
 
   async concluir(id: string, horimetroFinal?: number): Promise<OrdemServico> {
     try {
-      const response = await api.put<any>(`${API_ENDPOINTS.ordensServico.get(id)}/concluir`, horimetroFinal || null)
+      const body = horimetroFinal === undefined || horimetroFinal === null ? null : horimetroFinal
+      const response = await api.put<any>(
+        `${API_ENDPOINTS.ordensServico.get(id)}/concluir`,
+        JSON.stringify(body),
+        { headers: { 'Content-Type': 'application/json' } },
+      )
       return formatOrdemServicoFromResponse(response.data)
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao concluir ordem de serviço')

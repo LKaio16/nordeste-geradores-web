@@ -97,6 +97,7 @@ export function OrdensServicoPage() {
       [TipoOrdemServico.ENTREGA]: 'Entrega',
       [TipoOrdemServico.RECOLHIMENTO]: 'Recolhimento',
       [TipoOrdemServico.MANUTENCAO]: 'Manutenção',
+      [TipoOrdemServico.DIARIO]: 'Diário',
     }
     return tipoMap[tipo] || tipo
   }
@@ -177,6 +178,7 @@ export function OrdensServicoPage() {
           <option value={TipoOrdemServico.ENTREGA}>Entrega</option>
           <option value={TipoOrdemServico.RECOLHIMENTO}>Recolhimento</option>
           <option value={TipoOrdemServico.MANUTENCAO}>Manutenção</option>
+          <option value={TipoOrdemServico.DIARIO}>Diário</option>
         </select>
         <select
           value={locacaoFilter}

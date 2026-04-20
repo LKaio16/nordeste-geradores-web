@@ -76,16 +76,28 @@ export function OrdemServicoDetalhesPage() {
     if (!id || !ordemServico) return
 
     let horimetroFinal: number | undefined
-    if (ordemServico.tipo === TipoOrdemServico.MANUTENCAO || ordemServico.tipo === TipoOrdemServico.RECOLHIMENTO) {
-      const horimetroInput = window.prompt('Informe o horímetro final (obrigatório):')
-      if (!horimetroInput || horimetroInput.trim() === '') {
-        alert('Horímetro final é obrigatório para este tipo de ordem de serviço')
+    const tiposComHorimetroFinal =
+      ordemServico.tipo === TipoOrdemServico.MANUTENCAO ||
+      ordemServico.tipo === TipoOrdemServico.RECOLHIMENTO ||
+      ordemServico.tipo === TipoOrdemServico.DIARIO
+    if (tiposComHorimetroFinal) {
+      const obrigatorio =
+        ordemServico.tipo === TipoOrdemServico.RECOLHIMENTO || ordemServico.tipo === TipoOrdemServico.DIARIO
+      const horimetroInput = window.prompt(
+        obrigatorio
+          ? 'Confirme o horímetro final do gerador (obrigatório para recolhimento ou serviço diário):'
+          : 'Informe o horímetro final (opcional para manutenção; deixe em branco para não alterar):'
+      )
+      if (obrigatorio && (!horimetroInput || horimetroInput.trim() === '')) {
+        alert('Horímetro final é obrigatório para concluir recolhimento ou serviço diário.')
         return
       }
-      horimetroFinal = parseFloat(horimetroInput)
-      if (Number.isNaN(horimetroFinal)) {
-        alert('Horímetro inválido')
-        return
+      if (horimetroInput && horimetroInput.trim() !== '') {
+        horimetroFinal = parseFloat(horimetroInput)
+        if (Number.isNaN(horimetroFinal)) {
+          alert('Horímetro inválido')
+          return
+        }
       }
     }
 
@@ -113,6 +125,7 @@ export function OrdemServicoDetalhesPage() {
       [TipoOrdemServico.ENTREGA]: 'Entrega',
       [TipoOrdemServico.RECOLHIMENTO]: 'Recolhimento',
       [TipoOrdemServico.MANUTENCAO]: 'Manutenção',
+      [TipoOrdemServico.DIARIO]: 'Diário',
     }
     return tipoMap[tipo] || tipo
   }
@@ -285,12 +298,14 @@ export function OrdemServicoDetalhesPage() {
               <DetField label="Tipo">{formatTipo(ordemServico.tipo)}</DetField>
               <DetField label="Data agendada">{formatDate(ordemServico.dataAgendada)}</DetField>
               <DetField label="Data de execução">{ordemServico.dataExecucao ? formatDate(ordemServico.dataExecucao) : '—'}</DetField>
-              {ordemServico.tipo === TipoOrdemServico.ENTREGA && ordemServico.horimetroInicial !== undefined ? (
+              {ordemServico.horimetroInicial !== undefined && ordemServico.horimetroInicial !== null ? (
                 <DetField label="Horímetro inicial">
                   <span className="tabular-nums">{ordemServico.horimetroInicial.toLocaleString('pt-BR')} h</span>
                 </DetField>
               ) : null}
-              {(ordemServico.tipo === TipoOrdemServico.MANUTENCAO || ordemServico.tipo === TipoOrdemServico.RECOLHIMENTO) &&
+              {(ordemServico.tipo === TipoOrdemServico.MANUTENCAO ||
+                ordemServico.tipo === TipoOrdemServico.RECOLHIMENTO ||
+                ordemServico.tipo === TipoOrdemServico.DIARIO) &&
               ordemServico.horimetroFinal !== undefined ? (
                 <DetField label="Horímetro final">
                   <span className="tabular-nums">{ordemServico.horimetroFinal.toLocaleString('pt-BR')} h</span>

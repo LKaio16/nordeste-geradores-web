@@ -166,6 +166,7 @@ export function LocacaoDetalhesPage() {
       [TipoOrdemServico.ENTREGA]: 'Entrega',
       [TipoOrdemServico.RECOLHIMENTO]: 'Recolhimento',
       [TipoOrdemServico.MANUTENCAO]: 'Manutenção',
+      [TipoOrdemServico.DIARIO]: 'Diário',
     }
     return tipoMap[tipo] || tipo
   }
