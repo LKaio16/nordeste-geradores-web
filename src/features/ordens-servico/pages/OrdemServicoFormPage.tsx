@@ -404,7 +404,9 @@ export function OrdemServicoFormPage() {
                   <Gauge className="h-5 w-5" />
                   <CardTitle className="text-lg">Horímetro</CardTitle>
                 </div>
-                <CardDescription>Conforme o tipo de OS, informe leitura inicial ou final.</CardDescription>
+                <CardDescription>
+                  Leituras conforme o tipo. O horímetro final pode ficar em branco no painel e ser informado pelo técnico no app.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 {(formData.tipo === TipoOrdemServico.ENTREGA || formData.tipo === TipoOrdemServico.DIARIO) && (
@@ -440,9 +442,7 @@ export function OrdemServicoFormPage() {
                   formData.tipo === TipoOrdemServico.RECOLHIMENTO ||
                   formData.tipo === TipoOrdemServico.DIARIO) && (
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="horimetroFinal">
-                      Horímetro final {formData.tipo === TipoOrdemServico.DIARIO ? '' : '*'}
-                    </Label>
+                    <Label htmlFor="horimetroFinal">Horímetro final</Label>
                     <Input
                       id="horimetroFinal"
                       type="number"
@@ -456,14 +456,13 @@ export function OrdemServicoFormPage() {
                         })
                       }
                       className={fieldClass}
-                      required={formData.tipo !== TipoOrdemServico.DIARIO}
                     />
                     <p className="text-xs text-slate-500">
                       {formData.tipo === TipoOrdemServico.MANUTENCAO
-                        ? 'Após a manutenção (atualiza o gerador).'
+                        ? 'Após a manutenção (atualiza o gerador). Opcional aqui; o técnico pode informar no app.'
                         : formData.tipo === TipoOrdemServico.DIARIO
-                          ? 'Ao retornar no mesmo dia (atualiza o gerador). Pode ser preenchido na conclusão pelo técnico.'
-                          : 'No recolhimento (atualiza o gerador).'}
+                          ? 'Ao retornar no mesmo dia (atualiza o gerador). Pode ser preenchido pelo técnico no app ao concluir.'
+                          : 'No recolhimento (atualiza o gerador). Opcional aqui; o técnico informa no app ao concluir.'}
                     </p>
                   </div>
                 )}
