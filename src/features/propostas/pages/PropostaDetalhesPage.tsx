@@ -282,6 +282,22 @@ export function PropostaDetalhesPage() {
           </CardContent>
         </Card>
 
+        {proposta.detalhes && (
+          <Card className="shadow-sm md:col-span-2">
+            <CardHeader className="border-b border-slate-200">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 bg-slate-100 rounded-lg">
+                  <FileText className="h-5 w-5 text-slate-600" />
+                </div>
+                Detalhes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{proposta.detalhes}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {proposta.observacoes && (
           <Card className="shadow-sm md:col-span-2">
             <CardHeader className="border-b border-slate-200">

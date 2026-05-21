@@ -8,7 +8,7 @@ import {
   TipoOrdemServico,
   StatusOrdemServico,
 } from '@/types'
-import { locacaoService } from '@/services/locacaoService'
+import { locacaoService, nomeClienteLocacao } from '@/services/locacaoService'
 import { ordemServicoService } from '@/services/ordemServicoService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -329,7 +329,12 @@ export function LocacaoDetalhesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {locacao.cliente ? (
+            {locacao.clienteAvulsoNome && !locacao.cliente ? (
+              <div className="space-y-2 text-sm">
+                <p className="text-base font-semibold text-slate-900">{locacao.clienteAvulsoNome}</p>
+                <p className="text-slate-500">Contratante avulso (sem cadastro no sistema)</p>
+              </div>
+            ) : locacao.cliente ? (
               <div className="space-y-3 text-sm">
                 <p className="text-base font-semibold text-slate-900">{locacao.cliente.nome}</p>
                 <DetField label="CNPJ">{locacao.cliente.cnpj}</DetField>
@@ -347,20 +352,42 @@ export function LocacaoDetalhesPage() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[#203d7b]">
                 <Zap className="h-5 w-5" />
-                <CardTitle className="text-lg">Gerador</CardTitle>
+                <CardTitle className="text-lg">
+                  Geradores
+                  {(locacao.geradores?.length ?? 0) > 1
+                    ? ` (${locacao.geradores!.length})`
+                    : ''}
+                </CardTitle>
               </div>
-              {locacao.gerador ? (
-                <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-[#203d7b]" asChild>
-                  <Link to={`/geradores/${locacao.gerador.id}`}>
-                    Ficha
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                </Button>
-              ) : null}
             </div>
           </CardHeader>
           <CardContent>
-            {locacao.gerador ? (
+            {(locacao.geradores?.length ?? 0) > 0 ? (
+              <div className="space-y-4">
+                {locacao.geradores!.map((g) => (
+                  <div
+                    key={g.id}
+                    className="rounded-lg border border-slate-100 bg-slate-50/80 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="font-semibold text-slate-900">{g.codigo}</p>
+                      <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-[#203d7b]" asChild>
+                        <Link to={`/geradores/${g.id}`}>
+                          Ficha
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <DetField label="Modelo">{g.modelo}</DetField>
+                      <DetField label="Marca">{g.marca}</DetField>
+                      <DetField label="Potência">{g.potencia}</DetField>
+                      <DetField label="Status">{g.status}</DetField>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : locacao.gerador ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <DetField label="Código">{locacao.gerador.codigo}</DetField>
                 <DetField label="Modelo">{locacao.gerador.modelo}</DetField>
@@ -369,7 +396,7 @@ export function LocacaoDetalhesPage() {
                 <DetField label="Status equipamento">{locacao.gerador.status}</DetField>
               </div>
             ) : (
-              <p className="py-6 text-center text-sm text-slate-500">Gerador não informado.</p>
+              <p className="py-6 text-center text-sm text-slate-500">Nenhum gerador vinculado.</p>
             )}
           </CardContent>
         </Card>

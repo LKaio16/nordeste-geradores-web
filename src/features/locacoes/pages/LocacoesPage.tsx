@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Locacao, TipoLocacao, StatusLocacao } from '@/types'
-import { locacaoService } from '@/services/locacaoService'
+import { locacaoService, nomeClienteLocacao } from '@/services/locacaoService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -224,11 +224,15 @@ export function LocacoesPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-slate-600">
                         <User className="h-4 w-4 text-slate-400" />
-                        <span>{locacao.cliente?.nome || 'Cliente não informado'}</span>
+                        <span>{nomeClienteLocacao(locacao)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Zap className="h-4 w-4 text-slate-400" />
-                        <span>{locacao.gerador?.codigo || 'Gerador não informado'}</span>
+                        <span>
+                          {locacao.geradores?.length
+                            ? locacao.geradores.map((g) => g.codigo).join(', ')
+                            : locacao.gerador?.codigo || 'Gerador não informado'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Clock className="h-4 w-4 text-slate-400" />
@@ -323,8 +327,14 @@ export function LocacoesPage() {
                           {statusInfo.label}
                         </span>
                       </div>
-                      <p className="line-clamp-2 text-sm text-slate-700">{locacao.cliente?.nome || 'N/A'}</p>
-                      <p className="text-xs text-slate-500">Gerador {locacao.gerador?.codigo || 'N/A'} · {formatTipo(locacao.tipo)}</p>
+                      <p className="line-clamp-2 text-sm text-slate-700">{nomeClienteLocacao(locacao)}</p>
+                      <p className="text-xs text-slate-500">
+                        Gerador(es){' '}
+                        {locacao.geradores?.length
+                          ? locacao.geradores.map((g) => g.codigo).join(', ')
+                          : locacao.gerador?.codigo || 'N/A'}{' '}
+                        · {formatTipo(locacao.tipo)}
+                      </p>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                         <span>Início {formatDate(locacao.dataInicio)}</span>
                         {locacao.dataFim ? <span>Fim {formatDate(locacao.dataFim)}</span> : null}
@@ -395,10 +405,12 @@ export function LocacoesPage() {
                     <td className="py-3.5 pl-4 pr-3 align-middle font-semibold tabular-nums text-slate-900">{locacao.numero}</td>
                     <td className="whitespace-nowrap px-3 py-3.5 align-middle text-sm text-slate-700">{formatTipo(locacao.tipo)}</td>
                     <td className="max-w-[12rem] px-3 py-3.5 align-middle">
-                      <span className="line-clamp-2 text-sm text-slate-800">{locacao.cliente?.nome || 'N/A'}</span>
+                      <span className="line-clamp-2 text-sm text-slate-800">{nomeClienteLocacao(locacao)}</span>
                     </td>
                     <td className="hidden px-3 py-3.5 align-middle text-sm tabular-nums text-slate-600 lg:table-cell">
-                      {locacao.gerador?.codigo || 'N/A'}
+                      {locacao.geradores?.length
+                        ? locacao.geradores.map((g) => g.codigo).join(', ')
+                        : locacao.gerador?.codigo || 'N/A'}
                     </td>
                     <td className="hidden whitespace-nowrap px-3 py-3.5 align-middle text-sm tabular-nums text-slate-600 lg:table-cell">
                       {formatDate(locacao.dataInicio)}

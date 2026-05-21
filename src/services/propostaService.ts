@@ -31,6 +31,7 @@ function formatPropostaFromResponse(proposta: any): Proposta {
     numero: proposta.numero || '',
     cliente,
     clienteNome: proposta.clienteNome || proposta.cliente_nome || undefined,
+    detalhes: proposta.detalhes || undefined,
     tipo: proposta.tipo,
     dataEmissao: proposta.dataEmissao ? (typeof proposta.dataEmissao === 'string' ? proposta.dataEmissao : proposta.dataEmissao.toString()) : '',
     validade: proposta.validade ? (typeof proposta.validade === 'string' ? proposta.validade : proposta.validade.toString()) : '',

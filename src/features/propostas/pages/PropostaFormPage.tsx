@@ -139,12 +139,21 @@ export function PropostaFormPage() {
   const navigate = useNavigate()
   const isEdit = !!id
 
+  const sairDoFormulario = () => {
+    if (isEdit && id) {
+      navigate(`/propostas/${id}`)
+    } else {
+      navigate('/propostas')
+    }
+  }
+
   const [formData, setFormData] = useState<PropostaDraft>({
     clienteId: undefined,
     clienteNome: '',
     tipo: TipoProposta.MENSAL,
     dataEmissao: new Date().toISOString().split('T')[0],
     validade: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    detalhes: '',
     observacoes: '',
     dadosBancarios: '',
     status: StatusProposta.RASCUNHO,
@@ -238,6 +247,7 @@ export function PropostaFormPage() {
         tipo: proposta.tipo,
         dataEmissao: proposta.dataEmissao.split('T')[0],
         validade: proposta.validade.split('T')[0],
+        detalhes: proposta.detalhes || '',
         observacoes: proposta.observacoes || '',
         dadosBancarios: proposta.dadosBancarios || '',
         status: proposta.status,
@@ -309,10 +319,11 @@ export function PropostaFormPage() {
       }
       if (isEdit && id) {
         await propostaService.atualizar(id, payload)
+        navigate(`/propostas/${id}`)
       } else {
         await propostaService.criar(payload)
+        navigate('/propostas')
       }
-      navigate('/propostas')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar proposta'
       alert(msg)
@@ -387,7 +398,7 @@ export function PropostaFormPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <Button variant="ghost" onClick={() => navigate('/propostas')} className="w-fit gap-2 text-slate-600">
+          <Button variant="ghost" onClick={sairDoFormulario} className="w-fit gap-2 text-slate-600">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
@@ -508,6 +519,29 @@ export function PropostaFormPage() {
                   />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200/90 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2 text-[#203d7b]">
+                <FileText className="h-5 w-5" />
+                <CardTitle className="text-lg">Detalhes</CardTitle>
+              </div>
+              <CardDescription>
+                Texto livre exibido no PDF da proposta entre o nome do cliente e a discriminação dos serviços.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Label htmlFor="detalhes">Detalhes (opcional)</Label>
+              <textarea
+                id="detalhes"
+                value={formData.detalhes || ''}
+                onChange={(e) => setFormData({ ...formData, detalhes: e.target.value })}
+                placeholder="Informações adicionais, escopo, condições específicas…"
+                className={cn(textareaClass, 'mt-2 min-h-[120px]')}
+                rows={5}
+              />
             </CardContent>
           </Card>
 
@@ -814,7 +848,7 @@ export function PropostaFormPage() {
           </Card>
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end xl:hidden">
-            <Button type="button" variant="outline" onClick={() => navigate('/propostas')} className="w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={sairDoFormulario} className="w-full sm:w-auto">
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="w-full gap-2 bg-[#203d7b] hover:bg-[#203d7b]/90 sm:w-auto">
@@ -852,7 +886,7 @@ export function PropostaFormPage() {
                   }[formData.status]}
                 </div>
                 <div className="hidden flex-col gap-2 xl:flex">
-                  <Button type="button" variant="outline" onClick={() => navigate('/propostas')} className="w-full">
+                  <Button type="button" variant="outline" onClick={sairDoFormulario} className="w-full">
                     Cancelar
                   </Button>
                   <Button type="submit" form={FORM_ID} disabled={loading} className="w-full gap-2 bg-[#203d7b] hover:bg-[#203d7b]/90">

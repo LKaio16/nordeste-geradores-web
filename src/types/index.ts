@@ -178,8 +178,11 @@ export interface Locacao {
   id: string
   numero: string
   tipo: TipoLocacao
-  clienteId: string
+  clienteId?: string
+  clienteAvulsoNome?: string
+  /** Primeiro gerador (compatibilidade). */
   geradorId: string
+  geradorIds?: string[]
   dataInicio: string
   dataFim?: string
   valorMensal?: number
@@ -189,13 +192,15 @@ export interface Locacao {
   observacoes?: string
   cliente?: Cliente
   gerador?: Gerador
+  geradores?: Gerador[]
   createdAt: string
   updatedAt: string
 }
 
 export interface LocacaoRequest {
-  clienteId: string
-  geradorId: string
+  clienteId?: string
+  clienteAvulsoNome?: string
+  geradorIds: string[]
   tipo: TipoLocacao
   dataInicio: string
   dataFim?: string
@@ -212,7 +217,16 @@ export interface OrdemServico {
   locacaoId: string
   geradorId: string
   tecnicoResponsavelId: string
+  tecnicoAuxiliarId?: string
   dataAgendada: string
+  horarioPrevisto?: string
+  enderecoCep?: string
+  enderecoLogradouro?: string
+  enderecoNumero?: string
+  enderecoComplemento?: string
+  enderecoBairro?: string
+  enderecoCidade?: string
+  enderecoEstado?: string
   status: StatusOrdemServico
   observacoes?: string
   horimetroInicial?: number
@@ -223,6 +237,7 @@ export interface OrdemServico {
   locacao?: Locacao
   gerador?: Gerador
   tecnicoResponsavel?: Usuario
+  tecnicoAuxiliar?: Usuario
   fotos?: OrdemServicoFoto[]
   createdAt: string
   updatedAt: string
@@ -233,7 +248,16 @@ export interface OrdemServicoRequest {
   locacaoId: string
   geradorId: string
   tecnicoResponsavelId: string
+  tecnicoAuxiliarId?: string
   dataAgendada: string
+  horarioPrevisto?: string
+  enderecoCep?: string
+  enderecoLogradouro?: string
+  enderecoNumero?: string
+  enderecoComplemento?: string
+  enderecoBairro?: string
+  enderecoCidade?: string
+  enderecoEstado?: string
   status: StatusOrdemServico
   observacoes?: string
   horimetroInicial?: number
@@ -496,6 +520,8 @@ export interface Proposta {
   numero: string
   cliente: Cliente | null
   clienteNome?: string
+  /** Texto livre no PDF entre o cliente e a discriminação dos serviços. */
+  detalhes?: string
   tipo: TipoProposta
   dataEmissao: string
   validade: string
@@ -519,6 +545,7 @@ export interface PropostaItemRequest {
 export interface PropostaRequest {
   clienteId?: string
   clienteNome?: string
+  detalhes?: string
   tipo: TipoProposta
   dataEmissao: string
   validade: string

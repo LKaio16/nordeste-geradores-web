@@ -28,6 +28,7 @@ import {
   Loader2,
   Save,
 } from 'lucide-react'
+import { buscarCep, formatarCep } from '@/utils/viacep'
 
 const FORM_ID = 'form-ordem-servico'
 
@@ -84,6 +85,7 @@ export function OrdemServicoFormPage() {
     locacaoId: locacaoIdFromQuery || '',
     geradorId: '',
     tecnicoResponsavelId: '',
+    tecnicoAuxiliarId: undefined,
     dataAgendada: new Date().toISOString().split('T')[0],
     status: StatusOrdemServico.PENDENTE,
     observacoes: undefined,
@@ -91,9 +93,18 @@ export function OrdemServicoFormPage() {
     horimetroFinal: undefined,
     assinaturaCliente: false,
     assinaturaDigital: undefined,
+    horarioPrevisto: undefined,
+    enderecoCep: undefined,
+    enderecoLogradouro: undefined,
+    enderecoNumero: undefined,
+    enderecoComplemento: undefined,
+    enderecoBairro: undefined,
+    enderecoCidade: undefined,
+    enderecoEstado: undefined,
   })
 
   const [locacoes, setLocacoes] = useState<Locacao[]>([])
+  const [buscandoCep, setBuscandoCep] = useState(false)
   const [geradores, setGeradores] = useState<Gerador[]>([])
   const [tecnicos, setTecnicos] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(false)
@@ -113,8 +124,24 @@ export function OrdemServicoFormPage() {
   useEffect(() => {
     if (formData.locacaoId) {
       const locacao = locacoes.find((l) => l.id === formData.locacaoId)
-      if (locacao?.geradorId) {
-        setFormData((prev) => ({ ...prev, geradorId: locacao.geradorId }))
+      const ids = locacao?.geradorIds?.length
+        ? locacao.geradorIds
+        : locacao?.geradorId
+          ? [locacao.geradorId]
+          : []
+      if (ids.length === 1) {
+        setFormData((prev) => ({ ...prev, geradorId: ids[0] }))
+      } else if (ids.length > 1 && !ids.includes(formData.geradorId)) {
+        setFormData((prev) => ({ ...prev, geradorId: '' }))
+      }
+      const cli = locacao?.cliente
+      if (cli && !formData.enderecoLogradouro && !formData.enderecoCidade) {
+        setFormData((prev) => ({
+          ...prev,
+          enderecoLogradouro: cli.endereco || prev.enderecoLogradouro,
+          enderecoCidade: cli.cidade || prev.enderecoCidade,
+          enderecoEstado: cli.estado || prev.enderecoEstado,
+        }))
       }
     }
   }, [formData.locacaoId, locacoes])
@@ -150,9 +177,12 @@ export function OrdemServicoFormPage() {
 
       const geradoresUnicos = new Map<string, Gerador>()
       locacoesData.forEach((locacao) => {
-        if (locacao.gerador) {
-          geradoresUnicos.set(locacao.gerador.id, locacao.gerador)
-        }
+        const lista = locacao.geradores?.length
+          ? locacao.geradores
+          : locacao.gerador
+            ? [locacao.gerador]
+            : []
+        lista.forEach((g) => geradoresUnicos.set(g.id, g))
       })
       setGeradores(Array.from(geradoresUnicos.values()))
     } catch (err: unknown) {
@@ -172,6 +202,7 @@ export function OrdemServicoFormPage() {
         locacaoId: os.locacaoId,
         geradorId: os.geradorId,
         tecnicoResponsavelId: os.tecnicoResponsavelId,
+        tecnicoAuxiliarId: os.tecnicoAuxiliarId,
         dataAgendada: os.dataAgendada.split('T')[0],
         status: os.status,
         observacoes: os.observacoes,
@@ -179,6 +210,14 @@ export function OrdemServicoFormPage() {
         horimetroFinal: os.horimetroFinal,
         assinaturaCliente: os.assinaturaCliente,
         assinaturaDigital: os.assinaturaDigital,
+        horarioPrevisto: os.horarioPrevisto,
+        enderecoCep: os.enderecoCep,
+        enderecoLogradouro: os.enderecoLogradouro,
+        enderecoNumero: os.enderecoNumero,
+        enderecoComplemento: os.enderecoComplemento,
+        enderecoBairro: os.enderecoBairro,
+        enderecoCidade: os.enderecoCidade,
+        enderecoEstado: os.enderecoEstado,
       })
     } catch (err: unknown) {
       console.error('Erro ao carregar ordem de serviço:', err)
@@ -186,6 +225,35 @@ export function OrdemServicoFormPage() {
       navigate('/ordens-servico')
     } finally {
       setLoadingData(false)
+    }
+  }
+
+  const handleBuscarCep = async () => {
+    const cep = formData.enderecoCep?.replace(/\D/g, '') ?? ''
+    if (cep.length !== 8) {
+      alert('Informe um CEP com 8 dígitos.')
+      return
+    }
+    try {
+      setBuscandoCep(true)
+      const data = await buscarCep(cep)
+      if (!data) {
+        alert('CEP não encontrado.')
+        return
+      }
+      setFormData((prev) => ({
+        ...prev,
+        enderecoCep: data.cep.replace(/\D/g, ''),
+        enderecoLogradouro: data.logradouro || prev.enderecoLogradouro,
+        enderecoComplemento: data.complemento || prev.enderecoComplemento,
+        enderecoBairro: data.bairro || prev.enderecoBairro,
+        enderecoCidade: data.localidade || prev.enderecoCidade,
+        enderecoEstado: data.uf || prev.enderecoEstado,
+      }))
+    } catch {
+      alert('Erro ao consultar CEP.')
+    } finally {
+      setBuscandoCep(false)
     }
   }
 
@@ -211,8 +279,15 @@ export function OrdemServicoFormPage() {
     () => locacoes.find((l) => l.id === formData.locacaoId),
     [locacoes, formData.locacaoId]
   )
+  const geradoresDaLocacao =
+    locacaoSelecionada?.geradores?.length
+      ? locacaoSelecionada.geradores
+      : locacaoSelecionada?.gerador
+        ? [locacaoSelecionada.gerador]
+        : []
   const geradorSelecionado =
-    geradores.find((g) => g.id === formData.geradorId) || locacaoSelecionada?.gerador
+    geradores.find((g) => g.id === formData.geradorId) ||
+    geradoresDaLocacao.find((g) => g.id === formData.geradorId)
   const tecnicoSelecionado = tecnicos.find((t) => t.id === formData.tecnicoResponsavelId)
 
   const locacoesNoSelect = useMemo(() => {
@@ -294,15 +369,21 @@ export function OrdemServicoFormPage() {
                   required
                   disabled={!formData.locacaoId}
                 >
-                  <option value="">Selecione um gerador</option>
-                  {geradorSelecionado ? (
-                    <option value={geradorSelecionado.id}>
-                      {geradorSelecionado.codigo} — {geradorSelecionado.modelo}
+                  <option value="">Selecione o gerador da OS</option>
+                  {(geradoresDaLocacao.length > 0 ? geradoresDaLocacao : geradores).map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.codigo} — {g.modelo}
                     </option>
-                  ) : null}
+                  ))}
                 </select>
-                {locacaoSelecionada?.gerador ? (
-                  <p className="text-xs text-slate-500">Gerador da locação: {locacaoSelecionada.gerador.codigo}</p>
+                {geradoresDaLocacao.length > 1 ? (
+                  <p className="text-xs text-slate-500">
+                    Locação com {geradoresDaLocacao.length} geradores — escolha qual equipamento esta OS atende.
+                  </p>
+                ) : geradoresDaLocacao.length === 1 ? (
+                  <p className="text-xs text-slate-500">
+                    Gerador da locação: {geradoresDaLocacao[0].codigo}
+                  </p>
                 ) : null}
               </div>
             </CardContent>
@@ -366,6 +447,29 @@ export function OrdemServicoFormPage() {
                 </select>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="tecnicoAuxiliarId">Técnico auxiliar</Label>
+                <select
+                  id="tecnicoAuxiliarId"
+                  value={formData.tecnicoAuxiliarId ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tecnicoAuxiliarId: e.target.value || undefined,
+                    })
+                  }
+                  className={fieldClass}
+                >
+                  <option value="">Nenhum</option>
+                  {tecnicos
+                    .filter((t) => t.id !== formData.tecnicoResponsavelId)
+                    .map((tecnico) => (
+                      <option key={tecnico.id} value={tecnico.id}>
+                        {tecnico.nome}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="dataAgendada">Data agendada *</Label>
                 <Input
                   id="dataAgendada"
@@ -374,6 +478,18 @@ export function OrdemServicoFormPage() {
                   onChange={(e) => setFormData({ ...formData, dataAgendada: e.target.value })}
                   className={fieldClass}
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="horarioPrevisto">Horário previsto</Label>
+                <Input
+                  id="horarioPrevisto"
+                  type="time"
+                  value={formData.horarioPrevisto ?? ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, horarioPrevisto: e.target.value || undefined })
+                  }
+                  className={fieldClass}
                 />
               </div>
               <div className="space-y-2">
@@ -390,6 +506,102 @@ export function OrdemServicoFormPage() {
                   <option value={StatusOrdemServico.CONCLUIDA}>Concluída</option>
                   <option value={StatusOrdemServico.CANCELADA}>Cancelada</option>
                 </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200/90 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2 text-[#203d7b]">
+                <MapPin className="h-5 w-5" />
+                <CardTitle className="text-lg">Local do atendimento</CardTitle>
+              </div>
+              <CardDescription>
+                Endereço desta OS (pode ser diferente do cadastro do cliente). Use o CEP para preencher e abra no Maps no app do técnico.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="enderecoCep">CEP</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    id="enderecoCep"
+                    placeholder="00000-000"
+                    value={formData.enderecoCep ? formatarCep(formData.enderecoCep) : ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        enderecoCep: e.target.value.replace(/\D/g, '').slice(0, 8),
+                      })
+                    }
+                    className={`${fieldClass} max-w-[180px]`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBuscarCep}
+                    disabled={buscandoCep}
+                  >
+                    {buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar CEP'}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="enderecoLogradouro">Logradouro</Label>
+                <Input
+                  id="enderecoLogradouro"
+                  value={formData.enderecoLogradouro ?? ''}
+                  onChange={(e) => setFormData({ ...formData, enderecoLogradouro: e.target.value })}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enderecoNumero">Número</Label>
+                <Input
+                  id="enderecoNumero"
+                  value={formData.enderecoNumero ?? ''}
+                  onChange={(e) => setFormData({ ...formData, enderecoNumero: e.target.value })}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enderecoComplemento">Complemento</Label>
+                <Input
+                  id="enderecoComplemento"
+                  value={formData.enderecoComplemento ?? ''}
+                  onChange={(e) => setFormData({ ...formData, enderecoComplemento: e.target.value })}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enderecoBairro">Bairro</Label>
+                <Input
+                  id="enderecoBairro"
+                  value={formData.enderecoBairro ?? ''}
+                  onChange={(e) => setFormData({ ...formData, enderecoBairro: e.target.value })}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enderecoCidade">Cidade</Label>
+                <Input
+                  id="enderecoCidade"
+                  value={formData.enderecoCidade ?? ''}
+                  onChange={(e) => setFormData({ ...formData, enderecoCidade: e.target.value })}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enderecoEstado">UF</Label>
+                <Input
+                  id="enderecoEstado"
+                  maxLength={2}
+                  value={formData.enderecoEstado ?? ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, enderecoEstado: e.target.value.toUpperCase().slice(0, 2) })
+                  }
+                  className={fieldClass}
+                />
               </div>
             </CardContent>
           </Card>

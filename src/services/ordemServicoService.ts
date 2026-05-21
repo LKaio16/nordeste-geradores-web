@@ -6,8 +6,42 @@ import {
   StatusOrdemServico,
   TipoFoto,
   TipoOrdemServico,
+  Usuario,
 } from '@/types'
 import { api, API_ENDPOINTS } from '@/config/api'
+
+function mapUsuarioFromApi(u: any): Usuario | undefined {
+  if (!u) return undefined
+  return {
+    id: String(u.id),
+    nome: u.nome || '',
+    email: u.email || '',
+    telefone: u.telefone || '',
+    cargo: u.cargo || '',
+    nivelAcesso: u.nivelAcesso,
+    status: u.status,
+    dataAdmissao: u.dataAdmissao
+      ? typeof u.dataAdmissao === 'string'
+        ? u.dataAdmissao
+        : u.dataAdmissao.toString()
+      : '',
+    ultimoAcesso: u.ultimoAcesso
+      ? typeof u.ultimoAcesso === 'string'
+        ? u.ultimoAcesso
+        : u.ultimoAcesso.toString()
+      : undefined,
+    createdAt: u.createdAt
+      ? typeof u.createdAt === 'string'
+        ? u.createdAt
+        : u.createdAt.toString()
+      : new Date().toISOString(),
+    updatedAt: u.updatedAt
+      ? typeof u.updatedAt === 'string'
+        ? u.updatedAt
+        : u.updatedAt.toString()
+      : new Date().toISOString(),
+  }
+}
 
 function formatOrdemServicoFromResponse(os: any): OrdemServico {
   return {
@@ -17,7 +51,20 @@ function formatOrdemServicoFromResponse(os: any): OrdemServico {
     locacaoId: os.locacao?.id || os.locacaoId || '',
     geradorId: os.gerador?.id || os.geradorId || '',
     tecnicoResponsavelId: os.tecnicoResponsavel?.id || os.tecnicoResponsavelId || '',
+    tecnicoAuxiliarId: os.tecnicoAuxiliar?.id || os.tecnicoAuxiliarId || undefined,
     dataAgendada: os.dataAgendada ? (typeof os.dataAgendada === 'string' ? os.dataAgendada : os.dataAgendada.toString()) : '',
+    horarioPrevisto: os.horarioPrevisto
+      ? typeof os.horarioPrevisto === 'string'
+        ? os.horarioPrevisto.substring(0, 5)
+        : String(os.horarioPrevisto).substring(0, 5)
+      : undefined,
+    enderecoCep: os.enderecoCep || undefined,
+    enderecoLogradouro: os.enderecoLogradouro || undefined,
+    enderecoNumero: os.enderecoNumero || undefined,
+    enderecoComplemento: os.enderecoComplemento || undefined,
+    enderecoBairro: os.enderecoBairro || undefined,
+    enderecoCidade: os.enderecoCidade || undefined,
+    enderecoEstado: os.enderecoEstado || undefined,
     status: os.status,
     observacoes: os.observacoes || undefined,
     horimetroInicial: os.horimetroInicial ? parseFloat(os.horimetroInicial) : undefined,
@@ -31,6 +78,8 @@ function formatOrdemServicoFromResponse(os: any): OrdemServico {
       tipo: os.locacao.tipo,
       clienteId: os.locacao.cliente?.id || os.locacao.clienteId || '',
       geradorId: os.locacao.gerador?.id || os.locacao.geradorId || '',
+      geradorIds: (os.locacao.geradores || []).map((g: any) => String(g.id)),
+      clienteAvulsoNome: os.locacao.clienteAvulsoNome || undefined,
       dataInicio: os.locacao.dataInicio ? (typeof os.locacao.dataInicio === 'string' ? os.locacao.dataInicio : os.locacao.dataInicio.toString()) : '',
       dataFim: os.locacao.dataFim ? (typeof os.locacao.dataFim === 'string' ? os.locacao.dataFim : os.locacao.dataFim.toString()) : undefined,
       valorMensal: os.locacao.valorMensal ? parseFloat(os.locacao.valorMensal) : undefined,
@@ -38,6 +87,7 @@ function formatOrdemServicoFromResponse(os: any): OrdemServico {
       observacoes: os.locacao.observacoes || undefined,
       cliente: os.locacao.cliente,
       gerador: os.locacao.gerador,
+      geradores: os.locacao.geradores,
       createdAt: os.locacao.createdAt ? (typeof os.locacao.createdAt === 'string' ? os.locacao.createdAt : os.locacao.createdAt.toString()) : new Date().toISOString(),
       updatedAt: os.locacao.updatedAt ? (typeof os.locacao.updatedAt === 'string' ? os.locacao.updatedAt : os.locacao.updatedAt.toString()) : new Date().toISOString(),
     } : undefined,
@@ -55,19 +105,8 @@ function formatOrdemServicoFromResponse(os: any): OrdemServico {
       createdAt: os.gerador.createdAt ? (typeof os.gerador.createdAt === 'string' ? os.gerador.createdAt : os.gerador.createdAt.toString()) : new Date().toISOString(),
       updatedAt: os.gerador.updatedAt ? (typeof os.gerador.updatedAt === 'string' ? os.gerador.updatedAt : os.gerador.updatedAt.toString()) : new Date().toISOString(),
     } : undefined,
-    tecnicoResponsavel: os.tecnicoResponsavel ? {
-      id: String(os.tecnicoResponsavel.id),
-      nome: os.tecnicoResponsavel.nome || '',
-      email: os.tecnicoResponsavel.email || '',
-      telefone: os.tecnicoResponsavel.telefone || '',
-      cargo: os.tecnicoResponsavel.cargo || '',
-      nivelAcesso: os.tecnicoResponsavel.nivelAcesso,
-      status: os.tecnicoResponsavel.status,
-      dataAdmissao: os.tecnicoResponsavel.dataAdmissao ? (typeof os.tecnicoResponsavel.dataAdmissao === 'string' ? os.tecnicoResponsavel.dataAdmissao : os.tecnicoResponsavel.dataAdmissao.toString()) : '',
-      ultimoAcesso: os.tecnicoResponsavel.ultimoAcesso ? (typeof os.tecnicoResponsavel.ultimoAcesso === 'string' ? os.tecnicoResponsavel.ultimoAcesso : os.tecnicoResponsavel.ultimoAcesso.toString()) : undefined,
-      createdAt: os.tecnicoResponsavel.createdAt ? (typeof os.tecnicoResponsavel.createdAt === 'string' ? os.tecnicoResponsavel.createdAt : os.tecnicoResponsavel.createdAt.toString()) : new Date().toISOString(),
-      updatedAt: os.tecnicoResponsavel.updatedAt ? (typeof os.tecnicoResponsavel.updatedAt === 'string' ? os.tecnicoResponsavel.updatedAt : os.tecnicoResponsavel.updatedAt.toString()) : new Date().toISOString(),
-    } : undefined,
+    tecnicoResponsavel: mapUsuarioFromApi(os.tecnicoResponsavel),
+    tecnicoAuxiliar: mapUsuarioFromApi(os.tecnicoAuxiliar),
     fotos: (os.fotos || []).map((f: any) => ({
       id: String(f.id),
       ordemServicoId: String(os.id),
@@ -143,7 +182,11 @@ class OrdemServicoService {
 
   async atualizar(id: string, data: OrdemServicoRequest): Promise<OrdemServico> {
     try {
-      const response = await api.put<any>(API_ENDPOINTS.ordensServico.update(id), data)
+      const body = {
+        ...data,
+        tecnicoAuxiliarId: data.tecnicoAuxiliarId ?? null,
+      }
+      const response = await api.put<any>(API_ENDPOINTS.ordensServico.update(id), body)
       return formatOrdemServicoFromResponse(response.data)
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao atualizar ordem de serviço')

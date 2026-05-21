@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { OsFotoAutenticada } from '@/components/os/OsFotoAutenticada'
 import { cn } from '@/utils/cn'
+import { enderecoOsLinha, mapsSearchUrl, montarEnderecoOsParaMaps } from '@/utils/viacep'
 import {
   ArrowLeft,
   Edit,
@@ -238,7 +239,8 @@ export function OrdemServicoDetalhesPage() {
     (user.nivelAcesso === NivelAcesso.ADMIN ||
       user.nivelAcesso === NivelAcesso.GERENTE ||
       user.nivelAcesso === NivelAcesso.FINANCEIRO ||
-      user.id === ordemServico.tecnicoResponsavelId)
+      user.id === ordemServico.tecnicoResponsavelId ||
+      user.id === ordemServico.tecnicoAuxiliarId)
 
   return (
     <div className="space-y-6 pb-10">
@@ -297,7 +299,27 @@ export function OrdemServicoDetalhesPage() {
               <DetField label="Número">{ordemServico.numero}</DetField>
               <DetField label="Tipo">{formatTipo(ordemServico.tipo)}</DetField>
               <DetField label="Data agendada">{formatDate(ordemServico.dataAgendada)}</DetField>
+              <DetField label="Horário previsto">
+                {ordemServico.horarioPrevisto ? ordemServico.horarioPrevisto.substring(0, 5) : '—'}
+              </DetField>
               <DetField label="Data de execução">{ordemServico.dataExecucao ? formatDate(ordemServico.dataExecucao) : '—'}</DetField>
+              <DetField label="Local do atendimento">
+                <div className="space-y-2">
+                  <p>{enderecoOsLinha(ordemServico)}</p>
+                  {montarEnderecoOsParaMaps(ordemServico) ? (
+                    <a
+                      href={mapsSearchUrl(montarEnderecoOsParaMaps(ordemServico)!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-[#203d7b] hover:underline"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Abrir no Google Maps
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
+                </div>
+              </DetField>
               {ordemServico.horimetroInicial !== undefined && ordemServico.horimetroInicial !== null ? (
                 <DetField label="Horímetro inicial">
                   <span className="tabular-nums">{ordemServico.horimetroInicial.toLocaleString('pt-BR')} h</span>
@@ -381,13 +403,30 @@ export function OrdemServicoDetalhesPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 text-[#203d7b]">
                   <User className="h-5 w-5" />
-                  <CardTitle className="text-base">Técnico</CardTitle>
+                  <CardTitle className="text-base">Técnico responsável</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-1 text-sm">
                 <p className="font-semibold text-slate-900">{ordemServico.tecnicoResponsavel.nome}</p>
                 {ordemServico.tecnicoResponsavel.email ? (
                   <p className="break-all text-slate-600">{ordemServico.tecnicoResponsavel.email}</p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {ordemServico.tecnicoAuxiliar ? (
+            <Card className="border-slate-200/90 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2 text-[#203d7b]">
+                  <User className="h-5 w-5" />
+                  <CardTitle className="text-base">Técnico auxiliar</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm">
+                <p className="font-semibold text-slate-900">{ordemServico.tecnicoAuxiliar.nome}</p>
+                {ordemServico.tecnicoAuxiliar.email ? (
+                  <p className="break-all text-slate-600">{ordemServico.tecnicoAuxiliar.email}</p>
                 ) : null}
               </CardContent>
             </Card>
