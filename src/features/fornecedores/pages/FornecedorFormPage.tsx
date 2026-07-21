@@ -19,9 +19,9 @@ import { motion } from 'framer-motion'
 import {
   isValidEmail,
   normalizeEmail,
-  maskCNPJ,
+  maskCPFCNPJ,
   maskPhone,
-  isValidCNPJ,
+  isValidCPForCNPJ,
   unmaskCPFCNPJ,
   unmaskPhone,
 } from '@/utils/validators'
@@ -48,7 +48,7 @@ export function FornecedorFormPage() {
   })
 
   const [emailError, setEmailError] = useState('')
-  const [cnpjError, setCnpjError] = useState('')
+  const [cpfCnpjError, setCpfCnpjError] = useState('')
 
   useEffect(() => {
     if (id) {
@@ -62,7 +62,7 @@ export function FornecedorFormPage() {
       const fornecedor = await fornecedorService.buscarPorId(fornecedorId)
       setFormData({
         nome: fornecedor.nome,
-        cnpj: maskCNPJ(fornecedor.cnpj),
+        cnpj: maskCPFCNPJ(fornecedor.cnpj),
         email: fornecedor.email,
         telefone: maskPhone(fornecedor.telefone),
         endereco: fornecedor.endereco,
@@ -82,27 +82,34 @@ export function FornecedorFormPage() {
     e.preventDefault()
     setError('')
     setEmailError('')
-    setCnpjError('')
+    setCpfCnpjError('')
 
     if (!formData.nome.trim()) {
       setError('Nome é obrigatório')
       return
     }
 
-    const unmaskedCnpj = unmaskCPFCNPJ(formData.cnpj)
-    if (!unmaskedCnpj) {
-      setCnpjError('CNPJ é obrigatório')
+    const unmaskedCpfCnpj = unmaskCPFCNPJ(formData.cnpj)
+    if (!unmaskedCpfCnpj) {
+      setCpfCnpjError('CPF/CNPJ é obrigatório')
       return
     }
 
-    // Valida CNPJ (14 dígitos)
-    if (unmaskedCnpj.length === 14) {
-      if (!isValidCNPJ(formData.cnpj)) {
-        setCnpjError('CNPJ inválido')
+    // Valida apenas se tiver o tamanho correto (11 para CPF ou 14 para CNPJ)
+    if (unmaskedCpfCnpj.length === 11) {
+      // CPF - validar dígitos verificadores
+      if (!isValidCPForCNPJ(formData.cnpj)) {
+        setCpfCnpjError('CPF inválido')
+        return
+      }
+    } else if (unmaskedCpfCnpj.length === 14) {
+      // CNPJ - validar formato e dígitos verificadores
+      if (!isValidCPForCNPJ(formData.cnpj)) {
+        setCpfCnpjError('CNPJ inválido')
         return
       }
     } else {
-      setCnpjError('CNPJ deve ter 14 dígitos')
+      setCpfCnpjError('CPF/CNPJ deve ter 11 ou 14 dígitos')
       return
     }
 
@@ -124,7 +131,7 @@ export function FornecedorFormPage() {
       setLoading(true)
       const dataToSubmit: FornecedorRequest = {
         ...formData,
-        cnpj: unmaskedCnpj,
+        cnpj: unmaskedCpfCnpj,
         email: normalizedEmail || '',
         telefone: unmaskPhone(formData.telefone),
       }
@@ -206,32 +213,42 @@ export function FornecedorFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ *</Label>
+                <Label htmlFor="cnpj">CPF/CNPJ *</Label>
                 <Input
                   id="cnpj"
                   value={formData.cnpj}
                   onChange={(e) => {
-                    const masked = maskCNPJ(e.target.value)
+                    const masked = maskCPFCNPJ(e.target.value)
                     setFormData({ ...formData, cnpj: masked })
-                    if (cnpjError) {
-                      setCnpjError('')
+                    // Limpar erro enquanto digita
+                    if (cpfCnpjError) {
+                      setCpfCnpjError('')
                     }
                   }}
                   onBlur={(e) => {
                     const cleaned = unmaskCPFCNPJ(e.target.value)
-                    if (cleaned && cleaned.length === 14) {
-                      if (!isValidCNPJ(e.target.value)) {
-                        setCnpjError('CNPJ inválido')
+                    // Só valida se tiver o tamanho completo
+                    if (cleaned && cleaned.length === 11) {
+                      // CPF - validar dígitos verificadores
+                      if (!isValidCPForCNPJ(e.target.value)) {
+                        setCpfCnpjError('CPF inválido')
                       }
+                    } else if (cleaned && cleaned.length === 14) {
+                      // CNPJ - apenas verificar formato, não dígitos verificadores por enquanto
+                      // (pode ser um CNPJ válido mas com dígitos diferentes)
+                      // Se quiser validar rigorosamente, descomente a linha abaixo
+                      // if (!isValidCPForCNPJ(e.target.value)) {
+                      //   setCpfCnpjError('CNPJ inválido')
+                      // }
                     }
                   }}
                   required
-                  placeholder="00.000.000/0000-00"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   maxLength={18}
-                  className={cnpjError ? 'border-red-500' : ''}
+                  className={cpfCnpjError ? 'border-red-500' : ''}
                 />
-                {cnpjError && (
-                  <p className="text-sm text-red-600">{cnpjError}</p>
+                {cpfCnpjError && (
+                  <p className="text-sm text-red-600">{cpfCnpjError}</p>
                 )}
               </div>
 

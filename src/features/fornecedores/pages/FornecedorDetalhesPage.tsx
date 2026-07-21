@@ -17,7 +17,7 @@ import {
   FileText,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { maskCNPJ } from '@/utils/validators'
+import { maskCPFCNPJ } from '@/utils/validators'
 
 export function FornecedorDetalhesPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,7 +45,7 @@ export function FornecedorDetalhesPage() {
   }
 
   const formatCNPJ = (cnpj: string) => {
-    return maskCNPJ(cnpj)
+    return maskCPFCNPJ(cnpj)
   }
 
   const handleDelete = async () => {

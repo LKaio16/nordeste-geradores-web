@@ -25,7 +25,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { maskCNPJ } from '@/utils/validators'
+import { maskCPFCNPJ } from '@/utils/validators'
 import {
   DesktopDataTableShell,
   STH,
@@ -96,7 +96,7 @@ export function FornecedoresPage() {
   }
 
   const formatCNPJ = (cnpj: string) => {
-    return maskCNPJ(cnpj)
+    return maskCPFCNPJ(cnpj)
   }
 
   const filteredFornecedores = fornecedores
