@@ -124,11 +124,14 @@ export function ContasPage() {
     setPage(0)
   }, [searchParams])
 
+  const requestIdRef = useRef(0)
+
   useEffect(() => {
     carregarContas()
   }, [page, size, searchTerm, filters.tipo, filters.status, filters.dataInicio, filters.dataFim, ordenacaoVencimento])
 
   const carregarContas = async () => {
+    const requestId = ++requestIdRef.current
     try {
       setLoading(true)
       const sort =
@@ -147,13 +150,16 @@ export function ContasPage() {
         dataFim: filters.dataFim,
         sort,
       })
+      // Descarta respostas de requisições antigas que chegaram fora de ordem
+      if (requestId !== requestIdRef.current) return
       setContas(data.content)
       setTotalPages(data.totalPages)
       setTotalElements(data.totalElements)
     } catch (err: any) {
+      if (requestId !== requestIdRef.current) return
       console.error('Erro ao carregar contas:', err)
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }
 
