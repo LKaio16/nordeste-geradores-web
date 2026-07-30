@@ -30,6 +30,7 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -292,7 +293,7 @@ export function FornecedoresPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                {...openButtonHandlers(`/fornecedores/${fornecedor.id}`, navigate)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
@@ -343,7 +344,7 @@ export function FornecedoresPage() {
                         size="icon"
                         className="h-9 w-9 touch-manipulation"
                         title="Visualizar"
-                        onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                        {...openButtonHandlers(`/fornecedores/${fornecedor.id}`, navigate)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -392,7 +393,7 @@ export function FornecedoresPage() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.15 }}
                   className={listInteractiveRow(index)}
-                  onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                  {...openButtonHandlers(`/fornecedores/${fornecedor.id}`, navigate)}
                 >
                   <td className="py-3.5 pl-4 pr-3 align-middle">
                     <span className="font-semibold text-slate-900">{fornecedor.nome}</span>
@@ -531,7 +532,7 @@ export function FornecedoresPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(`/fornecedores/${fornecedor.id}`)}
+                      {...openButtonHandlers(`/fornecedores/${fornecedor.id}`, navigate)}
                       className="h-8 w-8"
                       title="Visualizar Detalhes"
                     >

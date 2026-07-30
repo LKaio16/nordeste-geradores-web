@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
+import type { NavigateFunction } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/components/ui/utils'
 
@@ -14,6 +15,42 @@ export const STH = {
   midHiddenXl: `${STH_BASE} px-3 text-left hidden xl:table-cell`,
   center: `${STH_BASE} px-3 text-center`,
   right: `${STH_BASE} pl-3 pr-4 text-right`,
+}
+
+/**
+ * Handlers para linha/card clicável de lista de detalhes: clique normal navega
+ * na mesma aba; Ctrl/Cmd+clique ou clique do meio abre em uma aba nova, sem
+ * perder a busca/filtros aplicados na listagem atual.
+ */
+export function openRowHandlers(path: string, navigate: NavigateFunction) {
+  const openNewTab = () => window.open(path, '_blank', 'noopener,noreferrer')
+  return {
+    onClick: (e: MouseEvent) => {
+      if (e.ctrlKey || e.metaKey || e.button === 1) {
+        openNewTab()
+      } else {
+        navigate(path)
+      }
+    },
+    onAuxClick: (e: MouseEvent) => {
+      if (e.button === 1) openNewTab()
+    },
+  }
+}
+
+/** Igual a openRowHandlers, mas para botões dentro de uma linha/card já clicável. */
+export function openButtonHandlers(path: string, navigate: NavigateFunction) {
+  const row = openRowHandlers(path, navigate)
+  return {
+    onClick: (e: MouseEvent) => {
+      e.stopPropagation()
+      row.onClick(e)
+    },
+    onAuxClick: (e: MouseEvent) => {
+      e.stopPropagation()
+      row.onAuxClick(e)
+    },
+  }
 }
 
 export function listInteractiveRow(index: number, className?: string) {

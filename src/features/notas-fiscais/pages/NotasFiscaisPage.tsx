@@ -26,6 +26,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { openButtonHandlers } from '@/components/tables/responsiveDataList'
 
 type ViewMode = 'cards' | 'table'
 
@@ -121,12 +122,9 @@ export function NotasFiscaisPage() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={(e) => {
-          e.stopPropagation()
-          navigate(`/notas-entrada/${notaId}`)
-        }}
+        {...openButtonHandlers(`/notas-entrada/${notaId}`, navigate)}
         className="h-9 w-9 shrink-0 touch-manipulation"
-        title="Visualizar"
+        title="Visualizar (Ctrl/clique do meio abre em nova aba)"
       >
         <Eye className="h-4 w-4" />
       </Button>
@@ -425,7 +423,7 @@ export function NotasFiscaisPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => navigate(`/notas-entrada/${nota.id}`)}
+                {...openButtonHandlers(`/notas-entrada/${nota.id}`, navigate)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
@@ -513,7 +511,7 @@ export function NotasFiscaisPage() {
                           className={`cursor-pointer transition-colors hover:bg-[#203d7b]/[0.04] ${
                             index % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
                           }`}
-                          onClick={() => navigate(`/notas-entrada/${nota.id}`)}
+                          {...openButtonHandlers(`/notas-entrada/${nota.id}`, navigate)}
                         >
                           <td className="py-3.5 pl-4 pr-3 align-middle">
                             <span className="font-semibold tabular-nums text-slate-900">#{nota.numeroNota}</span>
@@ -607,9 +605,9 @@ export function NotasFiscaisPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/notas-entrada/${nota.id}`)}
+                        {...openButtonHandlers(`/notas-entrada/${nota.id}`, navigate)}
                         className="h-8 w-8"
-                        title="Visualizar"
+                        title="Visualizar (Ctrl/clique do meio abre em nova aba)"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

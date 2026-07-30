@@ -24,6 +24,7 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -219,7 +220,7 @@ export function GeradoresPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/geradores/${gerador.id}`)}
+                        {...openButtonHandlers(`/geradores/${gerador.id}`, navigate)}
                         className="flex-1 gap-2"
                       >
                         <Eye className="h-4 w-4" />
@@ -262,7 +263,7 @@ export function GeradoresPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => navigate(`/geradores/${gerador.id}`)}
+                  {...openButtonHandlers(`/geradores/${gerador.id}`, navigate)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
@@ -293,7 +294,7 @@ export function GeradoresPage() {
                       className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/geradores/${gerador.id}`)}>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" {...openButtonHandlers(`/geradores/${gerador.id}`, navigate)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/geradores/${gerador.id}/editar`)}>
@@ -332,7 +333,7 @@ export function GeradoresPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className={listInteractiveRow(index)}
-                    onClick={() => navigate(`/geradores/${gerador.id}`)}
+                    {...openButtonHandlers(`/geradores/${gerador.id}`, navigate)}
                   >
                     <td className="py-3.5 pl-4 pr-3 align-middle font-semibold text-slate-900">{gerador.codigo}</td>
                     <td className="max-w-[10rem] px-3 py-3.5 align-middle text-sm text-slate-800">{gerador.modelo}</td>

@@ -35,6 +35,8 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openRowHandlers,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -590,7 +592,7 @@ export function ContasPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => navigate(`/contas/${conta.id}`)}
+                  {...openRowHandlers(`/contas/${conta.id}`, navigate)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
@@ -651,7 +653,7 @@ export function ContasPage() {
                       className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/contas/${conta.id}`)}>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" {...openButtonHandlers(`/contas/${conta.id}`, navigate)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/contas/${conta.id}/editar`)}>
@@ -721,7 +723,7 @@ export function ContasPage() {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.15 }}
                     className={cn(listInteractiveRow(index), vencida && '!bg-red-50/60')}
-                    onClick={() => navigate(`/contas/${conta.id}`)}
+                    {...openRowHandlers(`/contas/${conta.id}`, navigate)}
                   >
                     <td className="px-3 py-3.5 align-middle">
                       <span
@@ -791,11 +793,8 @@ export function ContasPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 touch-manipulation"
-                          title="Visualizar"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/contas/${conta.id}`)
-                          }}
+                          title="Visualizar (Ctrl/clique do meio abre em nova aba)"
+                          {...openButtonHandlers(`/contas/${conta.id}`, navigate)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -994,9 +993,9 @@ export function ContasPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/contas/${conta.id}`)}
+                        {...openButtonHandlers(`/contas/${conta.id}`, navigate)}
                         className="h-8 w-8"
-                        title="Visualizar Detalhes"
+                        title="Visualizar Detalhes (Ctrl/clique do meio abre em nova aba)"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

@@ -25,6 +25,7 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -256,7 +257,7 @@ export function LocacoesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/locacoes/${locacao.id}`)}
+                        {...openButtonHandlers(`/locacoes/${locacao.id}`, navigate)}
                         className="flex-1 gap-2"
                       >
                         <Eye className="h-4 w-4" />
@@ -310,7 +311,7 @@ export function LocacoesPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => navigate(`/locacoes/${locacao.id}`)}
+                  {...openButtonHandlers(`/locacoes/${locacao.id}`, navigate)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
@@ -350,7 +351,7 @@ export function LocacoesPage() {
                       className="flex w-full flex-wrap justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/locacoes/${locacao.id}`)}>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" {...openButtonHandlers(`/locacoes/${locacao.id}`, navigate)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       {locacao.status === StatusLocacao.ATIVA && (
@@ -400,7 +401,7 @@ export function LocacoesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className={listInteractiveRow(index)}
-                    onClick={() => navigate(`/locacoes/${locacao.id}`)}
+                    {...openButtonHandlers(`/locacoes/${locacao.id}`, navigate)}
                   >
                     <td className="py-3.5 pl-4 pr-3 align-middle font-semibold tabular-nums text-slate-900">{locacao.numero}</td>
                     <td className="whitespace-nowrap px-3 py-3.5 align-middle text-sm text-slate-700">{formatTipo(locacao.tipo)}</td>

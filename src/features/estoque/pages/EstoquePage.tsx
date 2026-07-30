@@ -26,6 +26,7 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -311,7 +312,7 @@ export function EstoquePage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => navigate(`/estoque/${estoque.id}`)}
+                {...openButtonHandlers(`/estoque/${estoque.id}`, navigate)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
@@ -342,7 +343,7 @@ export function EstoquePage() {
                     className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/estoque/${estoque.id}`)}>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" {...openButtonHandlers(`/estoque/${estoque.id}`, navigate)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/estoque/${estoque.id}/editar`)}>
@@ -377,7 +378,7 @@ export function EstoquePage() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.15 }}
                   className={listInteractiveRow(index)}
-                  onClick={() => navigate(`/estoque/${estoque.id}`)}
+                  {...openButtonHandlers(`/estoque/${estoque.id}`, navigate)}
                 >
                   <td className="max-w-[14rem] py-3.5 pl-4 pr-3 align-middle">
                     <span className="line-clamp-2 font-semibold text-slate-900">{estoque.produto.descricao}</span>
@@ -480,7 +481,7 @@ export function EstoquePage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/estoque/${estoque.id}`)}
+                        {...openButtonHandlers(`/estoque/${estoque.id}`, navigate)}
                         className="flex-1"
                       >
                         <Eye className="h-4 w-4 mr-1" />

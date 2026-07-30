@@ -33,6 +33,7 @@ import {
   DesktopDataTableShell,
   STH,
   listInteractiveRow,
+  openButtonHandlers,
   paginationBarClass,
   paginationControlsClass,
 } from '@/components/tables/responsiveDataList'
@@ -316,7 +317,7 @@ export function UsuariosPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => navigate(`/usuarios/${usuario.id}`)}
+                {...openButtonHandlers(`/usuarios/${usuario.id}`, navigate)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
@@ -365,7 +366,7 @@ export function UsuariosPage() {
                     className="flex w-full justify-end gap-1 border-t border-slate-100 pt-3 sm:w-auto sm:border-0 sm:pt-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/usuarios/${usuario.id}`)}>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" {...openButtonHandlers(`/usuarios/${usuario.id}`, navigate)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation" onClick={() => navigate(`/usuarios/${usuario.id}/editar`)}>
@@ -400,7 +401,7 @@ export function UsuariosPage() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.15 }}
                   className={listInteractiveRow(index)}
-                  onClick={() => navigate(`/usuarios/${usuario.id}`)}
+                  {...openButtonHandlers(`/usuarios/${usuario.id}`, navigate)}
                 >
                   <td className="py-3.5 pl-4 pr-3 align-middle">
                     <div className="flex items-center gap-2">
@@ -643,7 +644,7 @@ export function UsuariosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/usuarios/${usuario.id}`)}
+                        {...openButtonHandlers(`/usuarios/${usuario.id}`, navigate)}
                         className="h-8 w-8"
                         title="Visualizar Detalhes"
                       >
